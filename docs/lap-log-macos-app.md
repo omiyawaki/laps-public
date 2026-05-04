@@ -40,7 +40,8 @@ Use SwiftUI for a native macOS app.
 - Track selection: a searchable sidebar of measured tracks. The default
   `All Tracks` scope aggregates data across every track. Choosing a specific
   track filters the log and graphs to that track only. Track rows use the
-  measured track geometry as their icon.
+  measured track geometry as their icon. Built-ins include Example Loop and
+  lanes 1-6 of a standard 400 m track.
 - Lap input: integer stepper plus direct numeric field. Keep the model flexible
   enough to allow decimal laps later, but default the UI to whole laps.
 - Summary panel: when the entry form is empty, show cumulative laps, distance,

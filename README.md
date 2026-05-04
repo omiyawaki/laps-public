@@ -74,7 +74,8 @@ marathon training, where small per-lap errors compound over more than 100 laps.
 - `docs/apple-health-backfill.md` records Apple Health export extraction and
   route-summary findings for historical Loop runs.
 - `apps/Laps/` contains the native macOS lap logging app with default all-track
-  aggregation and a searchable measured-track sidebar.
+  aggregation, a searchable measured-track sidebar, and built-in standard-track
+  lanes 1-6.
 - `scripts/generate_laps_icon.py` generates the app icon from the
   production running-line GeoJSON.
 - `scripts/generate_track_thumbnail.py` generates bundled track thumbnails

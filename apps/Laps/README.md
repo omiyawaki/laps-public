@@ -1,8 +1,9 @@
 # Laps
 
 Native macOS SwiftUI app for logging laps across measured tracks and translating
-them into distance and elevation gain. The first built-in track is the accepted
-Example Loop 1 m offset measurement.
+them into distance and elevation gain. Built-in tracks include the accepted
+Example Loop 1 m offset measurement plus lanes 1-6 of a World Athletics
+standard 400 m track.
 
 ## Run Locally
 
@@ -39,6 +40,10 @@ graphs to that track only. Track rows use a small outline generated from each
 track's measured geometry. The new-run header can show a bundled satellite
 thumbnail for the selected track when one is available. Adding another measured
 loop later should mainly mean adding another `Track` to `TrackCatalog`.
+
+The standard track lane lengths are lane 1 at `400.000 m`, then lanes 2-6 as
+`407.038 m`, `414.704 m`, `422.370 m`, `430.034 m`, and `437.700 m` per lap.
+These use the standard 400 m lane stagger distances and assume flat elevation.
 
 Saved runs can be edited in place: select one row in the log, click the pencil
 button, then update track, date, laps, elapsed time, or note.

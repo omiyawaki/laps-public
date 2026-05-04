@@ -146,6 +146,15 @@ public enum TrackCatalog {
         Milestone(id: "marathon", label: "Marathon", meters: 42_195, colorHex: 0xC62828)
     ]
 
+    private static let standardTrackLaneStaggersMeters: [Int: Double] = [
+        1: 0.000,
+        2: 7.038,
+        3: 14.704,
+        4: 22.370,
+        5: 30.034,
+        6: 37.700
+    ]
+
     public static let tracks: [Track] = [
         Track(
             id: defaultTrackID,
@@ -218,7 +227,7 @@ public enum TrackCatalog {
                 TrackIconPoint(x: 0.98873, y: 0.28359),
                 TrackIconPoint(x: 1.00000, y: 0.24442)            ]
         )
-    ]
+    ] + standardTrackTracks
 
     public static var defaultTrack: Track {
         tracks[0]
@@ -226,6 +235,63 @@ public enum TrackCatalog {
 
     public static func track(for id: String) -> Track? {
         tracks.first { $0.id == id }
+    }
+
+    private static var standardTrackTracks: [Track] {
+        standardTrackLaneStaggersMeters.keys.sorted().map { lane in
+            let length = 400.0 + (standardTrackLaneStaggersMeters[lane] ?? 0)
+            return Track(
+                id: "standard_track_lane_\(lane)",
+                name: "Standard Track Lane \(lane)",
+                location: "400 m standard track",
+                sourceDescription: "World Athletics standard track",
+                lapLengthMeters: length,
+                lapElevationGainMeters: 0,
+                lapElevationLossMeters: 0,
+                elevationSourceDescription: "Assumed flat",
+                milestones: defaultMilestones,
+                iconPoints: standardTrackIconPoints(lane: lane)
+            )
+        }
+    }
+
+    private static func standardTrackIconPoints(lane: Int) -> [TrackIconPoint] {
+        let halfStraightMeters = 84.390 / 2.0
+        let radiusMeters = 36.800 + max(0, Double(lane - 1)) * 1.220
+        let maxRadiusMeters = 36.800 + 5.0 * 1.220
+        let boundsMinX = -halfStraightMeters - maxRadiusMeters
+        let boundsMaxX = halfStraightMeters + maxRadiusMeters
+        let boundsMinY = -maxRadiusMeters
+        let boundsMaxY = maxRadiusMeters
+        let boundsWidth = boundsMaxX - boundsMinX
+        let boundsHeight = boundsMaxY - boundsMinY
+        let stepsPerHalfCircle = 24
+        var coordinates: [(x: Double, y: Double)] = []
+
+        coordinates.append((x: -halfStraightMeters, y: -radiusMeters))
+        coordinates.append((x: halfStraightMeters, y: -radiusMeters))
+        for step in 1...stepsPerHalfCircle {
+            let angle = -Double.pi / 2.0 + Double(step) / Double(stepsPerHalfCircle) * Double.pi
+            coordinates.append((
+                x: halfStraightMeters + radiusMeters * cos(angle),
+                y: radiusMeters * sin(angle)
+            ))
+        }
+        coordinates.append((x: -halfStraightMeters, y: radiusMeters))
+        for step in 1...stepsPerHalfCircle {
+            let angle = Double.pi / 2.0 + Double(step) / Double(stepsPerHalfCircle) * Double.pi
+            coordinates.append((
+                x: -halfStraightMeters + radiusMeters * cos(angle),
+                y: radiusMeters * sin(angle)
+            ))
+        }
+
+        return coordinates.map { coordinate in
+            TrackIconPoint(
+                x: (coordinate.x - boundsMinX) / boundsWidth,
+                y: (coordinate.y - boundsMinY) / boundsHeight
+            )
+        }
     }
 }
 

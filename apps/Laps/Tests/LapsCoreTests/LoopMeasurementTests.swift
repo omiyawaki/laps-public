@@ -24,6 +24,26 @@ import Foundation
     #expect(track.iconPoints.count > 20)
 }
 
+@Test func standardTrackLanesUseWorldAthleticsStaggers() {
+    let expectedLengths = [
+        "standard_track_lane_1": 400.000,
+        "standard_track_lane_2": 407.038,
+        "standard_track_lane_3": 414.704,
+        "standard_track_lane_4": 422.370,
+        "standard_track_lane_5": 430.034,
+        "standard_track_lane_6": 437.700
+    ]
+    #expect(TrackCatalog.tracks.count == 7)
+    for (trackID, expectedLength) in expectedLengths {
+        let track = TrackCatalog.track(for: trackID)
+        #expect(track != nil)
+        #expect(abs((track?.lapLengthMeters ?? 0) - expectedLength) < 0.000_001)
+        #expect(track?.lapElevationGainMeters == 0)
+        #expect(track?.elevationSourceDescription == "Assumed flat")
+        #expect((track?.iconPoints.count ?? 0) > 20)
+    }
+}
+
 @Test func marathonExactLapsMatchesDiagnostics() {
     let marathon = LoopMeasurement.milestones.first { $0.id == "marathon" }
     #expect(marathon != nil)

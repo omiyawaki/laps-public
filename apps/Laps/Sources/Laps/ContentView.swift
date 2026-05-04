@@ -596,7 +596,7 @@ private struct TrackThumbnailView: View {
                 .stroke(.white.opacity(0.18), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
-        .accessibilityLabel("\(track.name) satellite thumbnail")
+        .accessibilityLabel(accessibilityLabel)
     }
 
     private var thumbnailImage: NSImage? {
@@ -619,6 +619,13 @@ private struct TrackThumbnailView: View {
             return nil
         }
         return NSImage(contentsOf: url)
+    }
+
+    private var accessibilityLabel: String {
+        if track.thumbnailResourceName == nil {
+            return "\(track.name) geometry thumbnail"
+        }
+        return "\(track.name) satellite thumbnail"
     }
 }
 
