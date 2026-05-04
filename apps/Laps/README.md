@@ -36,8 +36,9 @@ The main app layout has a searchable track sidebar, a track-aware entry form,
 and log/graph views. `All Tracks` is the default sidebar scope and aggregates
 runs across every measured track; choosing a specific track filters the log and
 graphs to that track only. Track rows use a small outline generated from each
-track's measured geometry. Adding another measured loop later should mainly mean
-adding another `Track` to `TrackCatalog`.
+track's measured geometry. The new-run header can show a bundled satellite
+thumbnail for the selected track when one is available. Adding another measured
+loop later should mainly mean adding another `Track` to `TrackCatalog`.
 
 Saved runs can be edited in place: select one row in the log, click the pencil
 button, then update track, date, laps, elapsed time, or note.
@@ -103,3 +104,16 @@ The generator also writes:
 The `.icns` is a flattened fallback for the current SwiftPM app bundle. For a
 future Xcode project, import the `IconComposerLayers` SVGs into Icon Composer
 and annotate Default, Dark, and Mono rendering modes there.
+
+## Track Thumbnails
+
+The Example Loop thumbnail is generated from the project ortho crop and the
+accepted 1 m running-line GeoJSON:
+
+```bash
+scripts/generate_track_thumbnail.py
+```
+
+The output lives under `Sources/Laps/Resources/TrackThumbnails/` so SwiftPM
+bundles it with the app. The deploy script copies the generated SwiftPM
+resource bundle into the installed `.app`.

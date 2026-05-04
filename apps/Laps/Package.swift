@@ -15,7 +15,10 @@ let package = Package(
         .executableTarget(
             name: "Laps",
             dependencies: ["LapsCore"],
-            path: "Sources/Laps"
+            path: "Sources/Laps",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "LapsCoreTests",

@@ -34,10 +34,18 @@ cd "$APP_SOURCE_DIR"
 swift build -c release
 
 rm -rf "$CONTENTS_DIR"
+if [[ -d "$APP_BUNDLE" ]]; then
+  find "$APP_BUNDLE" -maxdepth 1 -name '*.bundle' -exec rm -rf {} +
+fi
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp ".build/release/$BINARY_NAME" "$MACOS_DIR/$BINARY_NAME"
 chmod 755 "$MACOS_DIR/$BINARY_NAME"
 cp "$ICON_FILE" "$RESOURCES_DIR/Laps.icns"
+for RESOURCE_BUNDLE in .build/release/*.bundle .build/release/*.resources; do
+  if [[ -e "$RESOURCE_BUNDLE" ]]; then
+    cp -R "$RESOURCE_BUNDLE" "$RESOURCES_DIR/"
+  fi
+done
 
 cat > "$PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

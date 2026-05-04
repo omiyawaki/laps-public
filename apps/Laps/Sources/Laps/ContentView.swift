@@ -1,4 +1,5 @@
 import LapsCore
+import AppKit
 import Foundation
 import SwiftUI
 
@@ -184,19 +185,26 @@ struct ContentView: View {
 
     private func entryPanel(track: Track) -> some View {
         VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("New Run")
-                    .font(.title2.bold())
-                Text(track.name)
-                    .font(.headline)
-                Text(track.location)
-                    .foregroundStyle(.secondary)
-                Text(track.sourceDescription)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                Text("\(track.lapLengthMeters, specifier: "%.3f") m per lap")
-                    .font(.callout.weight(.medium))
-                    .foregroundStyle(.secondary)
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("New Run")
+                        .font(.title2.bold())
+                    Text(track.name)
+                        .font(.headline)
+                    Text(track.location)
+                        .foregroundStyle(.secondary)
+                    Text(track.sourceDescription)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Text("\(track.lapLengthMeters, specifier: "%.3f") m per lap")
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
+
+                TrackThumbnailView(track: track)
+                    .frame(width: 124, height: 88)
             }
 
             Divider()
@@ -563,6 +571,54 @@ private struct RunEditSheet: View {
 
     private var sourceLabel: String {
         draft.source == "apple_health_export" ? "Apple Health import" : "Manual entry"
+    }
+}
+
+private struct TrackThumbnailView: View {
+    let track: Track
+
+    var body: some View {
+        Group {
+            if let image = thumbnailImage {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                TrackGeometryIcon(points: track.iconPoints)
+                    .padding(20)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.quaternary)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(.white.opacity(0.18), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
+        .accessibilityLabel("\(track.name) satellite thumbnail")
+    }
+
+    private var thumbnailImage: NSImage? {
+        guard let resourceName = track.thumbnailResourceName else {
+            return nil
+        }
+        let resourceBundleName = "Laps_Laps.bundle"
+        let resourceURL = Bundle.main.resourceURL
+        let url = resourceURL?
+            .appendingPathComponent(resourceBundleName)
+            .appendingPathComponent("\(resourceName).png")
+            ?? resourceURL?.appendingPathComponent("\(resourceName).png")
+            ?? Bundle.module.url(
+                forResource: resourceName,
+                withExtension: "png",
+                subdirectory: "TrackThumbnails"
+            )
+            ?? Bundle.module.url(forResource: resourceName, withExtension: "png")
+        guard let url else {
+            return nil
+        }
+        return NSImage(contentsOf: url)
     }
 }
 

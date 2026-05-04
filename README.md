@@ -77,6 +77,8 @@ marathon training, where small per-lap errors compound over more than 100 laps.
   aggregation and a searchable measured-track sidebar.
 - `scripts/generate_laps_icon.py` generates the app icon from the
   production running-line GeoJSON.
+- `scripts/generate_track_thumbnail.py` generates bundled track thumbnails
+  from the ortho crop and accepted track geometry.
 - `scripts/summarize_apple_health_export.py` summarizes Apple Health workout
   routes and flags likely Loop runs for backfill.
 - `scripts/extract_loop_laps_from_apple_health.py` estimates complete

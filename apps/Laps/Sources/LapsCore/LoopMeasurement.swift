@@ -54,6 +54,7 @@ public struct Track: Codable, Hashable, Identifiable, Sendable {
     public let lapElevationGainMeters: Double
     public let lapElevationLossMeters: Double
     public let elevationSourceDescription: String?
+    public let thumbnailResourceName: String?
     public let milestones: [Milestone]
     public let iconPoints: [TrackIconPoint]
 
@@ -66,6 +67,7 @@ public struct Track: Codable, Hashable, Identifiable, Sendable {
         lapElevationGainMeters: Double = 0,
         lapElevationLossMeters: Double = 0,
         elevationSourceDescription: String? = nil,
+        thumbnailResourceName: String? = nil,
         milestones: [Milestone],
         iconPoints: [TrackIconPoint] = []
     ) {
@@ -77,6 +79,7 @@ public struct Track: Codable, Hashable, Identifiable, Sendable {
         self.lapElevationGainMeters = lapElevationGainMeters
         self.lapElevationLossMeters = lapElevationLossMeters
         self.elevationSourceDescription = elevationSourceDescription
+        self.thumbnailResourceName = thumbnailResourceName
         self.milestones = milestones
         self.iconPoints = iconPoints
     }

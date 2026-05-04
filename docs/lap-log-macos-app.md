@@ -34,6 +34,8 @@ Use SwiftUI for a native macOS app.
 
 - Main window: searchable track sidebar, compact running log form for the
   selected track, explicit Log/Graphs view switcher, and results panel.
+- New-run header: selected track metadata plus a compact satellite thumbnail
+  when the track has bundled imagery.
 - Date picker: the day of the run.
 - Track selection: a searchable sidebar of measured tracks. The default
   `All Tracks` scope aggregates data across every track. Choosing a specific
