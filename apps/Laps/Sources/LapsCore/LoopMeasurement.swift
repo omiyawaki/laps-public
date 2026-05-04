@@ -134,6 +134,14 @@ public struct Track: Codable, Hashable, Identifiable, Sendable {
     public var lapLengthMiles: Double {
         lapLengthMeters / DistanceUnits.metersPerMile
     }
+
+    public var standardTrackLaneNumber: Int? {
+        let prefix = "standard_track_lane_"
+        guard id.hasPrefix(prefix) else {
+            return nil
+        }
+        return Int(id.dropFirst(prefix.count))
+    }
 }
 
 public enum TrackCatalog {
@@ -255,16 +263,18 @@ public enum TrackCatalog {
         }
     }
 
+    private static func standardTrackRadiusMeters(lane: Int) -> Double {
+        let staggerMeters = standardTrackLaneStaggersMeters[lane] ?? 0
+        return 36.800 + staggerMeters / (2.0 * Double.pi)
+    }
+
     private static func standardTrackIconPoints(lane: Int) -> [TrackIconPoint] {
         let halfStraightMeters = 84.390 / 2.0
-        let radiusMeters = 36.800 + max(0, Double(lane - 1)) * 1.220
-        let maxRadiusMeters = 36.800 + 5.0 * 1.220
-        let boundsMinX = -halfStraightMeters - maxRadiusMeters
-        let boundsMaxX = halfStraightMeters + maxRadiusMeters
-        let boundsMinY = -maxRadiusMeters
-        let boundsMaxY = maxRadiusMeters
-        let boundsWidth = boundsMaxX - boundsMinX
-        let boundsHeight = boundsMaxY - boundsMinY
+        let radiusMeters = standardTrackRadiusMeters(lane: lane)
+        let maxRadiusMeters = standardTrackLaneStaggersMeters.keys
+            .map { standardTrackRadiusMeters(lane: $0) }
+            .max() ?? radiusMeters
+        let boundsSide = (halfStraightMeters + maxRadiusMeters) * 2.0
         let stepsPerHalfCircle = 24
         var coordinates: [(x: Double, y: Double)] = []
 
@@ -288,8 +298,8 @@ public enum TrackCatalog {
 
         return coordinates.map { coordinate in
             TrackIconPoint(
-                x: (coordinate.x - boundsMinX) / boundsWidth,
-                y: (coordinate.y - boundsMinY) / boundsHeight
+                x: 0.5 + coordinate.x / boundsSide,
+                y: 0.5 + coordinate.y / boundsSide
             )
         }
     }

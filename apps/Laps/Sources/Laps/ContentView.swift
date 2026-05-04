@@ -584,7 +584,12 @@ private struct TrackThumbnailView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             } else {
-                TrackGeometryIcon(points: track.iconPoints)
+                TrackGeometryIcon(
+                    points: track.iconPoints,
+                    label: track.standardTrackLaneNumber.map(String.init),
+                    lineWidth: 3,
+                    fixedSize: nil
+                )
                     .padding(20)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(.quaternary)
@@ -635,7 +640,10 @@ private struct TrackSidebarRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            TrackGeometryIcon(points: track.iconPoints)
+            TrackGeometryIcon(
+                points: track.iconPoints,
+                label: track.standardTrackLaneNumber.map(String.init)
+            )
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(track.name)
@@ -686,6 +694,9 @@ private struct AllTracksSidebarRow: View {
 
 private struct TrackGeometryIcon: View {
     let points: [TrackIconPoint]
+    var label: String? = nil
+    var lineWidth: CGFloat = 2.2
+    var fixedSize: CGFloat? = 32
 
     var body: some View {
         GeometryReader { proxy in
@@ -707,8 +718,13 @@ private struct TrackGeometryIcon: View {
                 }
                 .stroke(
                     Color.accentColor,
-                    style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round)
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
                 )
+
+                if let label {
+                    laneLabel(label, side: side)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             } else {
                 Image(systemName: "oval")
                     .font(.title3.weight(.medium))
@@ -716,7 +732,7 @@ private struct TrackGeometryIcon: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .frame(width: 32, height: 32)
+        .frame(width: fixedSize, height: fixedSize)
     }
 
     private func point(_ iconPoint: TrackIconPoint, in rect: CGRect) -> CGPoint {
@@ -724,6 +740,24 @@ private struct TrackGeometryIcon: View {
             x: rect.minX + CGFloat(iconPoint.x) * rect.width,
             y: rect.minY + CGFloat(iconPoint.y) * rect.height
         )
+    }
+
+    private func laneLabel(_ label: String, side: CGFloat) -> some View {
+        let diameter = min(max(side * 0.40, 14), 26)
+        let fontSize = min(max(side * 0.28, 9), 17)
+        return Text(label)
+            .font(.system(size: fontSize, weight: .bold, design: .rounded))
+            .monospacedDigit()
+            .foregroundStyle(.primary)
+            .frame(width: diameter, height: diameter)
+            .background {
+                Circle()
+                    .fill(.background.opacity(0.88))
+            }
+            .overlay {
+                Circle()
+                    .stroke(Color.accentColor.opacity(0.32), lineWidth: 0.8)
+            }
     }
 }
 

@@ -41,7 +41,24 @@ import Foundation
         #expect(track?.lapElevationGainMeters == 0)
         #expect(track?.elevationSourceDescription == "Assumed flat")
         #expect((track?.iconPoints.count ?? 0) > 20)
+        #expect(track?.standardTrackLaneNumber == Int(trackID.replacingOccurrences(of: "standard_track_lane_", with: "")))
     }
+}
+
+@Test func standardTrackLaneIconsUseProportionedLaneGeometry() {
+    let lane1 = TrackCatalog.track(for: "standard_track_lane_1")
+    let lane6 = TrackCatalog.track(for: "standard_track_lane_6")
+    #expect(lane1 != nil)
+    #expect(lane6 != nil)
+
+    let lane1Bounds = iconBounds(lane1?.iconPoints ?? [])
+    let lane6Bounds = iconBounds(lane6?.iconPoints ?? [])
+    let lane6RadiusMeters = 36.800 + 37.700 / (2.0 * Double.pi)
+    let expectedLane6Aspect = (84.390 + 2.0 * lane6RadiusMeters) / (2.0 * lane6RadiusMeters)
+
+    #expect(lane1Bounds.width < lane6Bounds.width)
+    #expect(lane1Bounds.height < lane6Bounds.height)
+    #expect(abs((lane6Bounds.width / lane6Bounds.height) - expectedLane6Aspect) < 0.000_001)
 }
 
 @Test func marathonExactLapsMatchesDiagnostics() {
@@ -69,4 +86,14 @@ import Foundation
     #expect(entries.first?.laps == 10)
     #expect(entries.first?.trackID == TrackCatalog.defaultTrackID)
     #expect(entries.first?.elapsedSeconds == nil)
+}
+
+private func iconBounds(_ points: [TrackIconPoint]) -> (width: Double, height: Double) {
+    guard let minX = points.map(\.x).min(),
+          let maxX = points.map(\.x).max(),
+          let minY = points.map(\.y).min(),
+          let maxY = points.map(\.y).max() else {
+        return (0, 0)
+    }
+    return (maxX - minX, maxY - minY)
 }
