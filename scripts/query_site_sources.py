@@ -101,6 +101,64 @@ def service_metadata(service_url: str) -> dict[str, Any]:
     }
 
 
+def layer_resolution_ft(name: str) -> float | None:
+    if "half_ft" in name:
+        return 0.5
+    if "one_ft" in name:
+        return 1.0
+    if "two_ft" in name:
+        return 2.0
+    if "one_m" in name:
+        return 3.28084
+    return None
+
+
+def layer_year(name: str) -> int | None:
+    if len(name) < 5 or not name.startswith("ind"):
+        return None
+    try:
+        year = int(name[3:5])
+    except ValueError:
+        return None
+    return 1900 + year if year >= 90 else 2000 + year
+
+
+def ortho_tile_index_hits(service_url: str, lon: float, lat: float) -> list[dict[str, Any]]:
+    metadata = fetch_json(service_url.rstrip("/"), {"f": "json"})
+    hits: list[dict[str, Any]] = []
+    for layer in metadata.get("layers", []):
+        layer_name = layer.get("name", "")
+        resolution_ft = layer_resolution_ft(layer_name)
+        if resolution_ft is None:
+            continue
+        layer_url = f"{service_url.rstrip('/')}/{layer['id']}"
+        try:
+            result = point_query(
+                layer_url,
+                lon,
+                lat,
+                return_geometry=False,
+                out_fields="FILENAME,DIRECT_DL,FTP_PATH,SIZE",
+            )
+        except RuntimeError:
+            try:
+                result = point_query(layer_url, lon, lat, return_geometry=False, out_fields="*")
+            except RuntimeError:
+                continue
+        for attrs in attributes(result):
+            hits.append(
+                {
+                    "layer_id": layer["id"],
+                    "layer_name": layer_name,
+                    "year": layer_year(layer_name),
+                    "resolution_ft": resolution_ft,
+                    "resolution_m": resolution_ft * 0.3048,
+                    **attrs,
+                }
+            )
+    return sorted(hits, key=lambda item: (item["resolution_ft"], -(item.get("year") or 0), item["layer_id"]))
+
+
 def attributes(features_json: dict[str, Any]) -> list[dict[str, Any]]:
     return [dict(feature.get("attributes", {})) for feature in features_json.get("features", [])]
 
@@ -137,6 +195,10 @@ def main() -> None:
         "orthoimagery_latest_index": {
             "query_url": query_url(ortho["latest_index"]),
             "features": attributes(point_query(ortho["latest_index"], lon, lat)),
+        },
+        "orthoimagery_tile_index_hits": {
+            "service_url": ortho["tile_index"],
+            "features": ortho_tile_index_hits(ortho["tile_index"], lon, lat),
         },
         "orthoimagery_all_years_index": {
             "query_url": query_url(ortho["all_years_index"]),

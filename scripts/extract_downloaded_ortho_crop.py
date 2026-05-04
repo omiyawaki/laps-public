@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract the loop crop from the downloadable NYS Example City orthoimagery zip."""
+"""Extract a loop crop from a downloadable NYS orthoimagery zip."""
 
 from __future__ import annotations
 
@@ -15,9 +15,11 @@ import rasterio
 import requests
 import yaml
 from PIL import Image
-from pyproj import Transformer
+from pyproj import CRS, Transformer
+from rasterio.enums import Resampling
 from rasterio.merge import merge
-from rasterio.windows import from_bounds
+from rasterio.transform import from_bounds
+from rasterio.warp import reproject
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -144,37 +146,70 @@ def find_intersecting_members(zip_path: Path, target_bbox_3857: list[float]) -> 
     return selected, selected_crs, selected_target_bbox
 
 
+def crs_unit_factor_to_meters(crs: Any) -> float:
+    parsed = CRS.from_user_input(crs)
+    if not parsed.axis_info:
+        return 1.0
+    return float(parsed.axis_info[0].unit_conversion_factor)
+
+
 def write_crop_geotiff(
     zip_path: Path,
     members: list[str],
-    crop_bbox: tuple[float, float, float, float],
+    source_crop_bbox: tuple[float, float, float, float],
+    target_bbox_3857: list[float],
     output_path: Path,
 ) -> dict[str, Any]:
     datasets = [rasterio.open(zip_raster_path(zip_path, member)) for member in members]
     try:
-        mosaic, transform = merge(datasets, bounds=crop_bbox)
+        source_crs = datasets[0].crs
+        mosaic, source_transform = merge(datasets, bounds=source_crop_bbox)
+        source_resolution = list(datasets[0].res)
+        source_resolution_m = abs(float(source_resolution[0])) * crs_unit_factor_to_meters(source_crs)
+        output_width = max(1, int(round((target_bbox_3857[2] - target_bbox_3857[0]) / source_resolution_m)))
+        output_height = max(1, int(round((target_bbox_3857[3] - target_bbox_3857[1]) / source_resolution_m)))
+        output_transform = from_bounds(*target_bbox_3857, width=output_width, height=output_height)
+        output = np.zeros((mosaic.shape[0], output_height, output_width), dtype=mosaic.dtype)
+        for band_index in range(mosaic.shape[0]):
+            reproject(
+                source=mosaic[band_index],
+                destination=output[band_index],
+                src_transform=source_transform,
+                src_crs=source_crs,
+                dst_transform=output_transform,
+                dst_crs="EPSG:3857",
+                resampling=Resampling.bilinear,
+            )
         profile = datasets[0].profile.copy()
         profile.update(
             {
                 "driver": "GTiff",
-                "height": mosaic.shape[1],
-                "width": mosaic.shape[2],
-                "transform": transform,
-                "count": mosaic.shape[0],
+                "height": output_height,
+                "width": output_width,
+                "transform": output_transform,
+                "crs": "EPSG:3857",
+                "count": output.shape[0],
                 "compress": "deflate",
                 "tiled": True,
             }
         )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with rasterio.open(output_path, "w", **profile) as dst:
-            dst.write(mosaic)
+            dst.write(output)
 
         return {
-            "crs": str(datasets[0].crs),
-            "transform": list(transform),
-            "shape": list(mosaic.shape),
-            "bounds": list(crop_bbox),
-            "source_resolution": list(datasets[0].res),
+            "crs": "EPSG:3857",
+            "source_crs": str(source_crs),
+            "transform": list(output_transform),
+            "shape": list(output.shape),
+            "bounds": list(target_bbox_3857),
+            "source_bounds": list(source_crop_bbox),
+            "source_resolution": source_resolution,
+            "source_resolution_m": source_resolution_m,
+            "output_resolution_m": [
+                (target_bbox_3857[2] - target_bbox_3857[0]) / output_width,
+                (target_bbox_3857[3] - target_bbox_3857[1]) / output_height,
+            ],
         }
     finally:
         for dataset in datasets:
@@ -215,7 +250,7 @@ def render_comparison(mapserver_png: Path, downloaded_png: Path, output_png: Pat
     axes[0].imshow(mapserver)
     axes[0].set_title("NYS MapServer crop")
     axes[1].imshow(downloaded)
-    axes[1].set_title("Downloaded Example City ortho crop")
+    axes[1].set_title("Downloaded NYS ortho crop")
     for ax in axes:
         ax.set_axis_off()
     fig.tight_layout()
@@ -239,12 +274,12 @@ def main() -> None:
     config = load_yaml(args.config)
     if args.crop_metadata and args.crop_metadata.exists():
         crop_metadata = load_json(args.crop_metadata)
-        target_bbox_3857 = crop_metadata["bbox_epsg3857"]
+        target_bbox_3857 = crop_metadata.get("bbox_epsg3857") or crop_metadata["crop"]["bbox_epsg3857"]
     else:
         target_bbox_3857 = derive_loop_bbox_3857(config)
 
     members, source_crs, target_bbox_source = find_intersecting_members(args.zip, target_bbox_3857)
-    crop_info = write_crop_geotiff(args.zip, members, target_bbox_source, args.output_tif)
+    crop_info = write_crop_geotiff(args.zip, members, target_bbox_source, target_bbox_3857, args.output_tif)
     png_info = render_download_crop(args.output_tif, args.output_png)
     comparison_png = None
     if args.mapserver_png and args.mapserver_png.exists():
