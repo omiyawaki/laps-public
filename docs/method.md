@@ -472,3 +472,24 @@ This candidate is now treated as the production curb in the viewer as the green
 `Production visual curb` layer, with the visual 1 m offset path in yellow.
 Older 2 ft and prior-curve products remain available as hidden comparison
 layers.
+
+## Elevation Gain
+
+The accepted 1 m running line is also sampled against the FEMA 2019 1 m
+bare-earth DEM to derive a reproducible per-lap elevation gain. The sampled
+closed-loop profile is smoothed before summing positive elevation changes so
+single-cell DEM wiggles are not counted as ascent.
+
+Current elevation outputs:
+
+- Script: `scripts/derive_track_elevation.py`
+- DEM crop: `data/interim/lidar/fema-2019-dem-loop-tight.tif`
+- Profile diagnostics: `geometry/running-line-1m-elevation-profile.json`
+- Smoothing: closed-loop Gaussian elevation profile, `sigma = 10 m`
+- Smoothed elevation range along the running line: `2.630 m`
+- One-lap elevation gain: `1.500 m`, `4.921 ft`
+- One-lap elevation loss: `1.500 m`, `4.921 ft`
+
+Because this is a closed loop, gain and loss should be nearly equal. The raw
+unsmoothed profile gives `4.753 m` gain/loss, which is a useful upper bound but
+likely over-counts raster-scale noise.

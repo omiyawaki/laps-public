@@ -18,6 +18,8 @@ import Foundation
     #expect(track.id == "example_loop")
     #expect(track.name == "Example Loop")
     #expect(abs(track.lapLengthMeters - LoopMeasurement.lapLengthMeters) < 0.000_001)
+    #expect(abs(track.lapElevationGainMeters - 1.5) < 0.000_001)
+    #expect(abs(track.elevationGainFeet(forLaps: 38) - 187.007874015) < 0.000_001)
     #expect(track.iconPoints.count > 20)
 }
 

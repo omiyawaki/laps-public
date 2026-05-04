@@ -71,7 +71,7 @@ struct RunChartsView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 420)
+                .frame(width: 500)
                 .onChange(of: metric) {
                     selectedDate = nil
                     visibleDateRange = nil
@@ -257,7 +257,7 @@ struct RunChartsView: View {
             return selectedTrack.milestones.map {
                 RunChartReferenceMark(label: $0.label, value: $0.meters / DistanceUnits.metersPerMile, color: Color(hex: $0.colorHex))
             }
-        case .elapsed, .pace:
+        case .elapsed, .pace, .gain:
             return []
         }
     }
@@ -271,7 +271,7 @@ struct RunChartsView: View {
 
     private var totalValue: String {
         switch metric {
-        case .laps, .distance, .elapsed:
+        case .laps, .distance, .elapsed, .gain:
             return metric.formatted(points.reduce(0) { $0 + $1.value })
         case .pace:
             guard !points.isEmpty else {
@@ -307,6 +307,9 @@ struct RunChartsView: View {
             Text("\(pointTrack.distanceMiles(forLaps: point.entry.laps), specifier: "%.2f") mi")
                 .font(.system(.body, design: .rounded).weight(.semibold))
                 .monospacedDigit()
+            Text("\(pointTrack.elevationGainFeet(forLaps: point.entry.laps), specifier: "%.0f") ft gain")
+                .font(.system(.body, design: .rounded).weight(.semibold))
+                .monospacedDigit()
             Text(durationString(point.entry.elapsedSeconds))
                 .font(.system(.body, design: .rounded).weight(.semibold))
                 .monospacedDigit()
@@ -336,6 +339,7 @@ private enum RunChartMetric: String, CaseIterable, Identifiable {
     case distance
     case elapsed
     case pace
+    case gain
 
     var id: Self { self }
 
@@ -345,6 +349,7 @@ private enum RunChartMetric: String, CaseIterable, Identifiable {
         case .distance: "Distance"
         case .elapsed: "Elapsed"
         case .pace: "Pace"
+        case .gain: "Gain"
         }
     }
 
@@ -354,12 +359,13 @@ private enum RunChartMetric: String, CaseIterable, Identifiable {
         case .distance: "miles"
         case .elapsed: "minutes"
         case .pace: "min / mi"
+        case .gain: "feet"
         }
     }
 
     var bestTitle: String {
         switch self {
-        case .laps, .distance, .elapsed: "Max"
+        case .laps, .distance, .elapsed, .gain: "Max"
         case .pace: "Best"
         }
     }
@@ -368,7 +374,7 @@ private enum RunChartMetric: String, CaseIterable, Identifiable {
         switch self {
         case .elapsed, .pace:
             "Entries need elapsed time before this chart can be drawn."
-        case .laps, .distance:
+        case .laps, .distance, .gain:
             "Add a run to start seeing trends."
         }
     }
@@ -379,6 +385,7 @@ private enum RunChartMetric: String, CaseIterable, Identifiable {
         case .distance: Color(red: 0.13, green: 0.56, blue: 0.36)
         case .elapsed: Color(red: 0.74, green: 0.36, blue: 0.10)
         case .pace: Color(red: 0.58, green: 0.22, blue: 0.64)
+        case .gain: Color(red: 0.49, green: 0.43, blue: 0.21)
         }
     }
 
@@ -392,12 +399,14 @@ private enum RunChartMetric: String, CaseIterable, Identifiable {
             entry.elapsedSeconds.map { $0 / 60 }
         case .pace:
             track.paceSecondsPerMile(laps: entry.laps, elapsedSeconds: entry.elapsedSeconds).map { $0 / 60 }
+        case .gain:
+            track.elevationGainFeet(forLaps: entry.laps)
         }
     }
 
     func bestValue(in values: [Double]) -> Double? {
         switch self {
-        case .laps, .distance, .elapsed:
+        case .laps, .distance, .elapsed, .gain:
             values.max()
         case .pace:
             values.min()
@@ -414,6 +423,8 @@ private enum RunChartMetric: String, CaseIterable, Identifiable {
             durationString(value * 60)
         case .pace:
             durationString(value * 60) + " / mi"
+        case .gain:
+            String(format: "%.0f ft", value)
         }
     }
 }

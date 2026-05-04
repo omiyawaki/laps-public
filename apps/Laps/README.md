@@ -1,8 +1,8 @@
 # Laps
 
 Native macOS SwiftUI app for logging laps across measured tracks and translating
-them into distance. The first built-in track is the accepted Example Loop 1 m
-offset measurement.
+them into distance and elevation gain. The first built-in track is the accepted
+Example Loop 1 m offset measurement.
 
 ## Run Locally
 
@@ -27,9 +27,10 @@ upstream or `origin` remote configured. Set `LAPS_DISABLE_GIT_SYNC=1` when
 running special local checks that should not create data commits.
 
 Entries store the selected `trackID`, optional elapsed time in seconds,
-lap-start/lap-end timestamps, and a source label. Manual entry exposes elapsed
-time as hour, minute, and second fields; Apple Health backfill scripts can
-populate the richer timestamp fields later.
+lap-start/lap-end timestamps, and a source label. Distance and elevation gain
+are derived from the selected track's measurement constants. Manual entry
+exposes elapsed time as hour, minute, and second fields; Apple Health backfill
+scripts can populate the richer timestamp fields later.
 
 The main app layout has a searchable track sidebar, a track-aware entry form,
 and log/graph views. `All Tracks` is the default sidebar scope and aggregates
@@ -48,9 +49,9 @@ reference. Cumulative distance is shown in miles only so the value stays legible
 as the log grows.
 
 The app has a Graphs tab with interactive Swift Charts for laps, distance,
-elapsed time, and pace over date. Click or drag across a chart to inspect the
-nearest saved run. Pinch over the chart to zoom the date axis; two-finger
-scroll over the chart to pan the visible date range.
+elapsed time, pace, and elevation gain over date. Click or drag across a chart
+to inspect the nearest saved run. Pinch over the chart to zoom the date axis;
+two-finger scroll over the chart to pan the visible date range.
 
 ## Deploy To Applications
 

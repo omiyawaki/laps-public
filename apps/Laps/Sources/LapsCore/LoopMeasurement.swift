@@ -51,6 +51,9 @@ public struct Track: Codable, Hashable, Identifiable, Sendable {
     public let location: String
     public let sourceDescription: String
     public let lapLengthMeters: Double
+    public let lapElevationGainMeters: Double
+    public let lapElevationLossMeters: Double
+    public let elevationSourceDescription: String?
     public let milestones: [Milestone]
     public let iconPoints: [TrackIconPoint]
 
@@ -60,6 +63,9 @@ public struct Track: Codable, Hashable, Identifiable, Sendable {
         location: String,
         sourceDescription: String,
         lapLengthMeters: Double,
+        lapElevationGainMeters: Double = 0,
+        lapElevationLossMeters: Double = 0,
+        elevationSourceDescription: String? = nil,
         milestones: [Milestone],
         iconPoints: [TrackIconPoint] = []
     ) {
@@ -68,6 +74,9 @@ public struct Track: Codable, Hashable, Identifiable, Sendable {
         self.location = location
         self.sourceDescription = sourceDescription
         self.lapLengthMeters = lapLengthMeters
+        self.lapElevationGainMeters = lapElevationGainMeters
+        self.lapElevationLossMeters = lapElevationLossMeters
+        self.elevationSourceDescription = elevationSourceDescription
         self.milestones = milestones
         self.iconPoints = iconPoints
     }
@@ -86,6 +95,22 @@ public struct Track: Codable, Hashable, Identifiable, Sendable {
 
     public func distanceFeet(forLaps laps: Double) -> Double {
         distanceMeters(forLaps: laps) / DistanceUnits.metersPerFoot
+    }
+
+    public func elevationGainMeters(forLaps laps: Double) -> Double {
+        max(0, laps) * lapElevationGainMeters
+    }
+
+    public func elevationGainFeet(forLaps laps: Double) -> Double {
+        elevationGainMeters(forLaps: laps) / DistanceUnits.metersPerFoot
+    }
+
+    public func elevationLossMeters(forLaps laps: Double) -> Double {
+        max(0, laps) * lapElevationLossMeters
+    }
+
+    public func elevationLossFeet(forLaps laps: Double) -> Double {
+        elevationLossMeters(forLaps: laps) / DistanceUnits.metersPerFoot
     }
 
     public func paceSecondsPerMile(laps: Double, elapsedSeconds: Double?) -> Double? {
@@ -125,6 +150,9 @@ public enum TrackCatalog {
             location: "Synthetic example",
             sourceDescription: "Visual curb, 1 m offset",
             lapLengthMeters: 320.0,
+            lapElevationGainMeters: 1.5,
+            lapElevationLossMeters: 1.5,
+            elevationSourceDescription: "FEMA 2019 DEM",
             milestones: defaultMilestones,
             iconPoints: [
                 TrackIconPoint(x: 1.00000, y: 0.24442),
@@ -271,6 +299,8 @@ public enum LoopMeasurement {
     public static let defaultTrack = TrackCatalog.defaultTrack
     public static let sourceDescription = defaultTrack.sourceDescription
     public static let lapLengthMeters = defaultTrack.lapLengthMeters
+    public static let lapElevationGainMeters = defaultTrack.lapElevationGainMeters
+    public static let lapElevationLossMeters = defaultTrack.lapElevationLossMeters
     public static let metersPerMile = DistanceUnits.metersPerMile
     public static let metersPerFoot = DistanceUnits.metersPerFoot
     public static let milestones = defaultTrack.milestones
@@ -289,6 +319,14 @@ public enum LoopMeasurement {
 
     public static func distanceFeet(forLaps laps: Double) -> Double {
         defaultTrack.distanceFeet(forLaps: laps)
+    }
+
+    public static func elevationGainMeters(forLaps laps: Double) -> Double {
+        defaultTrack.elevationGainMeters(forLaps: laps)
+    }
+
+    public static func elevationGainFeet(forLaps laps: Double) -> Double {
+        defaultTrack.elevationGainFeet(forLaps: laps)
     }
 
     public static func paceSecondsPerMile(laps: Double, elapsedSeconds: Double?) -> Double? {

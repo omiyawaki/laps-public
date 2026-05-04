@@ -67,6 +67,8 @@ marathon training, where small per-lap errors compound over more than 100 laps.
   road/grass contrast, gray curb-line evidence, and smooth offset penalties.
 - `scripts/build_running_line.py` offsets the accepted production curb by the
   configured running distance and writes lap-count diagnostics.
+- `scripts/derive_track_elevation.py` samples the accepted running line against
+  the FEMA 2019 1 m bare-earth DEM and derives per-lap elevation gain/loss.
 - `docs/lap-log-macos-app.md` sketches the native macOS lap logging app that
   will use the measured loop length.
 - `docs/apple-health-backfill.md` records Apple Health export extraction and
@@ -128,6 +130,10 @@ marathon training, where small per-lap errors compound over more than 100 laps.
 - Production running line: `geometry/running-line-1m-visual-candidate.geojson`
 - Offset: `1.0 m`
 - One lap: `320.000 m`, `0.198839 mi`, `1049.869 ft`
+- One-lap elevation gain/loss: `1.500 m`, `4.921 ft`, derived from the FEMA
+  2019 1 m bare-earth DEM with 10 m closed-profile smoothing.
+- Elevation diagnostics:
+  `geometry/running-line-1m-elevation-profile.json`
 - Milestone diagnostics:
   `build/fusion/running-line-1m-visual-diagnostics.json`
 - Lap log data:

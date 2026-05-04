@@ -82,6 +82,20 @@ struct ContentView: View {
         RunTotals(entries: selectedEntries)
     }
 
+    private var elevationSourceSummary: String? {
+        if let selectedTrack {
+            return selectedTrack.elevationSourceDescription
+        }
+        let sources = Set(selectedEntries.compactMap { track(for: $0).elevationSourceDescription })
+        if sources.count == 1 {
+            return sources.first
+        }
+        if sources.count > 1 {
+            return "Mixed track sources"
+        }
+        return nil
+    }
+
     var body: some View {
         NavigationSplitView {
             trackSidebar
@@ -274,6 +288,7 @@ struct ContentView: View {
             HStack(spacing: 12) {
                 ValueTile(title: "Elapsed", value: durationString(elapsedSeconds))
                 ValueTile(title: "Pace", value: paceString(laps: laps, elapsedSeconds: elapsedSeconds, track: entryTrack))
+                ValueTile(title: "Gain", value: elevationGainString(feet: entryTrack.elevationGainFeet(forLaps: laps)))
             }
 
             HStack(spacing: 8) {
@@ -300,6 +315,13 @@ struct ContentView: View {
                 ValueTile(title: "Total Miles", value: totals.distanceSummary)
                 ValueTile(title: "Total Time", value: durationString(totals.totalElapsedSeconds))
                 ValueTile(title: "Average Pace", value: paceString(secondsPerMile: totals.averagePaceSecondsPerMile))
+            }
+
+            HStack(spacing: 12) {
+                ValueTile(title: "Total Gain", value: elevationGainString(feet: totals.totalElevationGainFeet))
+                if let elevationSource = elevationSourceSummary {
+                    ValueTile(title: "Elevation Source", value: elevationSource)
+                }
             }
 
             HStack(spacing: 12) {
@@ -360,6 +382,10 @@ struct ContentView: View {
                     Text("\(miles, specifier: "%.3f") mi")
                 }
                 .width(min: 90, ideal: 108, max: 122)
+                TableColumn("Gain") { entry in
+                    Text(elevationGainString(feet: track(for: entry).elevationGainFeet(forLaps: entry.laps)))
+                }
+                .width(min: 72, ideal: 82, max: 96)
                 TableColumn("Elapsed") { entry in
                     Text(durationString(entry.elapsedSeconds))
                 }
@@ -693,6 +719,16 @@ private func paceString(secondsPerMile: Double?) -> String {
     return durationString(secondsPerMile) + " / mi"
 }
 
+private func elevationGainString(feet: Double) -> String {
+    guard feet > 0 else {
+        return "-"
+    }
+    if feet >= 1_000 {
+        return String(format: "%.1fk ft", feet / 1_000)
+    }
+    return String(format: "%.0f ft", feet)
+}
+
 private struct RunTotals {
     let entries: [RunEntry]
 
@@ -712,6 +748,12 @@ private struct RunTotals {
 
     var totalMiles: Double {
         totalMeters / DistanceUnits.metersPerMile
+    }
+
+    var totalElevationGainFeet: Double {
+        entries.reduce(0) { total, entry in
+            total + track(for: entry).elevationGainFeet(forLaps: entry.laps)
+        }
     }
 
     var distanceSummary: String {
