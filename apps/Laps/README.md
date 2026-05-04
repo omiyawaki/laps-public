@@ -26,10 +26,10 @@ run-log JSON file. It also pushes automatically when the project git repo has an
 upstream or `origin` remote configured. Set `LAPS_DISABLE_GIT_SYNC=1` when
 running special local checks that should not create data commits.
 
-Entries store the selected `trackID`, optional elapsed time, lap-start/lap-end
-timestamps, and a source label. Manual entry currently exposes elapsed minutes
-in the UI; Apple Health backfill scripts can populate the richer timestamp
-fields later.
+Entries store the selected `trackID`, optional elapsed time in seconds,
+lap-start/lap-end timestamps, and a source label. Manual entry exposes elapsed
+time as hour, minute, and second fields; Apple Health backfill scripts can
+populate the richer timestamp fields later.
 
 The main app layout has a searchable track sidebar, a track-aware entry form,
 and log/graph views. `All Tracks` is the default sidebar scope and aggregates
@@ -39,7 +39,7 @@ track's measured geometry. Adding another measured loop later should mainly mean
 adding another `Track` to `TrackCatalog`.
 
 Saved runs can be edited in place: select one row in the log, click the pencil
-button, then update track, date, laps, elapsed minutes, or note.
+button, then update track, date, laps, elapsed time, or note.
 
 When the entry form is empty, the summary shows cumulative training totals and
 rolling scale references. References are drawn from a prebuilt ladder, and only

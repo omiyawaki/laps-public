@@ -12,7 +12,9 @@ struct ContentView: View {
     @State private var trackSearch = ""
     @State private var runDate = Date()
     @State private var laps = 0.0
-    @State private var elapsedMinutes = 0.0
+    @State private var elapsedHours = 0
+    @State private var elapsedMinutes = 0
+    @State private var elapsedSecondsPart = 0
     @State private var note = ""
     @State private var selectedRunIDs = Set<RunEntry.ID>()
     @State private var editingRunDraft: RunEditDraft?
@@ -68,11 +70,12 @@ struct ContentView: View {
     }
 
     private var elapsedSeconds: Double? {
-        elapsedMinutes > 0 ? elapsedMinutes * 60 : nil
+        let totalSeconds = elapsedHours * 3600 + elapsedMinutes * 60 + elapsedSecondsPart
+        return totalSeconds > 0 ? Double(totalSeconds) : nil
     }
 
     private var hasDraftEntry: Bool {
-        laps > 0 || elapsedMinutes > 0 || !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        laps > 0 || elapsedSeconds != nil || !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private var cumulativeTotals: RunTotals {
@@ -211,12 +214,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Elapsed")
                     .font(.headline)
-                HStack {
-                    TextField("minutes", value: $elapsedMinutes, format: .number.precision(.fractionLength(0...2)))
-                        .textFieldStyle(.roundedBorder)
-                    Stepper("", value: $elapsedMinutes, in: 0...600, step: 1)
-                        .labelsHidden()
-                }
+                DurationInput(hours: $elapsedHours, minutes: $elapsedMinutes, seconds: $elapsedSecondsPart)
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -230,7 +228,9 @@ struct ContentView: View {
             Button {
                 store.saveRun(trackID: track.id, date: runDate, laps: laps, elapsedSeconds: elapsedSeconds, note: note)
                 laps = 0
+                elapsedHours = 0
                 elapsedMinutes = 0
+                elapsedSecondsPart = 0
                 note = ""
             } label: {
                 Text("Save Run")
@@ -373,12 +373,55 @@ struct ContentView: View {
     }
 }
 
+private struct DurationInput: View {
+    @Binding var hours: Int
+    @Binding var minutes: Int
+    @Binding var seconds: Int
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            DurationUnitField(title: "hr", value: $hours, range: 0...24)
+            DurationUnitField(title: "min", value: $minutes, range: 0...59)
+            DurationUnitField(title: "sec", value: $seconds, range: 0...59)
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
+private struct DurationUnitField: View {
+    let title: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+
+    private var clampedValue: Binding<Int> {
+        Binding {
+            value.clamped(to: range)
+        } set: { newValue in
+            value = newValue.clamped(to: range)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            TextField("0", value: clampedValue, format: .number)
+                .textFieldStyle(.roundedBorder)
+                .monospacedDigit()
+                .frame(width: 56)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 private struct RunEditDraft: Identifiable {
     let entryID: RunEntry.ID
     var trackID: String
     var date: Date
     var laps: Double
-    var elapsedMinutes: Double
+    var elapsedHours: Int
+    var elapsedMinutes: Int
+    var elapsedSecondsPart: Int
     var note: String
     var source: String?
 
@@ -387,7 +430,8 @@ private struct RunEditDraft: Identifiable {
     }
 
     var elapsedSeconds: Double? {
-        elapsedMinutes > 0 ? elapsedMinutes * 60 : nil
+        let totalSeconds = elapsedHours * 3600 + elapsedMinutes * 60 + elapsedSecondsPart
+        return totalSeconds > 0 ? Double(totalSeconds) : nil
     }
 
     init(entry: RunEntry) {
@@ -395,7 +439,10 @@ private struct RunEditDraft: Identifiable {
         self.trackID = entry.trackID
         self.date = entry.date
         self.laps = entry.laps
-        self.elapsedMinutes = (entry.elapsedSeconds ?? 0) / 60
+        let wholeSeconds = max(0, Int((entry.elapsedSeconds ?? 0).rounded()))
+        self.elapsedHours = wholeSeconds / 3600
+        self.elapsedMinutes = (wholeSeconds % 3600) / 60
+        self.elapsedSecondsPart = wholeSeconds % 60
         self.note = entry.note
         self.source = entry.source
     }
@@ -457,12 +504,7 @@ private struct RunEditSheet: View {
                 GridRow {
                     Text("Elapsed")
                         .foregroundStyle(.secondary)
-                    HStack {
-                        TextField("minutes", value: $draft.elapsedMinutes, format: .number.precision(.fractionLength(0...2)))
-                            .textFieldStyle(.roundedBorder)
-                        Stepper("", value: $draft.elapsedMinutes, in: 0...600, step: 1)
-                            .labelsHidden()
-                    }
+                    DurationInput(hours: $draft.elapsedHours, minutes: $draft.elapsedMinutes, seconds: $draft.elapsedSecondsPart)
                 }
 
                 GridRow {
@@ -614,6 +656,12 @@ private enum DetailPage: String, CaseIterable, Identifiable {
         case .log: "list.bullet.rectangle"
         case .graphs: "chart.xyaxis.line"
         }
+    }
+}
+
+private extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }
 

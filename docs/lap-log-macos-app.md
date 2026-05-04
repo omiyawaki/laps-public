@@ -53,7 +53,7 @@ Use SwiftUI for a native macOS app.
   remaining distance.
 - Log table: saved runs for the selected track sorted by date, with columns for
   date, laps, miles, elapsed time, and pace. Selecting one run enables an edit
-  sheet for changing track, date/time, laps, elapsed minutes, and note.
+  sheet for changing track, date/time, laps, elapsed time, and note.
 - Graphs page: interactive Swift Charts for laps, distance, elapsed time, and
   pace over date. Selecting or dragging over the chart shows the nearest run and
   its exact metric values. Trackpad pinch zooms the date axis; two-finger scroll
