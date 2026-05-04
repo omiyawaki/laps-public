@@ -73,6 +73,8 @@ marathon training, where small per-lap errors compound over more than 100 laps.
   will use the measured loop length.
 - `docs/apple-health-backfill.md` records Apple Health export extraction and
   route-summary findings for historical Loop runs.
+- `docs/second-site-measurement.md` records the Second Site review
+  workflow using wearable GPS, 2024 NYS orthoimagery, and NYS `Latest_DEM`.
 - `apps/Laps/` contains the native macOS lap logging app with default all-track
   aggregation, a searchable measured-track sidebar, and built-in standard-track
   lanes 1-6.
@@ -86,6 +88,12 @@ marathon training, where small per-lap errors compound over more than 100 laps.
   Loop laps and lap-only elapsed time from candidate GPX routes.
 - `scripts/import_loop_lap_estimates.py` imports high-confidence Apple
   Health lap estimates into the official project-local run log.
+- `scripts/query_site_sources.py`,
+  `scripts/export_second_site_layers.py`,
+  `scripts/build_second_site_track.py`, and
+  `scripts/build_second_site_viewer.py` build the Second Site source
+  inventory, imagery/DEM layers, wearable-derived candidate geometry, and local
+  review UI.
 - `scripts/deploy_laps_app.sh` builds and installs the app at
   `~/Applications/Laps.app`.
 - `geometry/` contains small candidate GeoJSON files that are suitable for
