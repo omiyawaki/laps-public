@@ -1,0 +1,31 @@
+# Python and tooling
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Local environment
+.env
+.env.*
+.DS_Store
+
+# Large or generated geospatial artifacts
+data/raw/
+data/interim/
+data/processed/
+build/
+cache/
+*.tif
+*.tiff
+*.jp2
+*.vrt
+*.mbtiles
+*.gpkg
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+
+# Local notebooks/checkpoints
+.ipynb_checkpoints/

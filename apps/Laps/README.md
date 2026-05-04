@@ -1,0 +1,104 @@
+# Laps
+
+Native macOS SwiftUI app for logging laps across measured tracks and translating
+them into distance. The first built-in track is the accepted Example Loop 1 m
+offset measurement.
+
+## Run Locally
+
+```bash
+swift run Laps
+```
+
+Run records are saved as project-local JSON at:
+
+```text
+/Users/USERNAME/Documents/Projects/0001/data/app/lap-log/runs.json
+```
+
+That keeps the log next to the measurement project so it can be tracked,
+diffed, and backed up with the project itself. The measurement constants live in
+`Sources/LapsCore/LoopMeasurement.swift` and should be regenerated
+whenever the production running line changes.
+
+After a run is added, edited, or deleted, the app stages and commits only this
+run-log JSON file. It also pushes automatically when the project git repo has an
+upstream or `origin` remote configured. Set `LAPS_DISABLE_GIT_SYNC=1` when
+running special local checks that should not create data commits.
+
+Entries store the selected `trackID`, optional elapsed time, lap-start/lap-end
+timestamps, and a source label. Manual entry currently exposes elapsed minutes
+in the UI; Apple Health backfill scripts can populate the richer timestamp
+fields later.
+
+The main app layout has a searchable track sidebar, a track-aware entry form,
+and log/graph views. `All Tracks` is the default sidebar scope and aggregates
+runs across every measured track; choosing a specific track filters the log and
+graphs to that track only. Track rows use a small outline generated from each
+track's measured geometry. Adding another measured loop later should mainly mean
+adding another `Track` to `TrackCatalog`.
+
+Saved runs can be edited in place: select one row in the log, click the pencil
+button, then update track, date, laps, elapsed minutes, or note.
+
+When the entry form is empty, the summary shows cumulative training totals and
+rolling scale references. References are drawn from a prebuilt ladder, and only
+appear while the cumulative distance is between `0.1x` and `1.1x` of that
+reference. Cumulative distance is shown in miles only so the value stays legible
+as the log grows.
+
+The app has a Graphs tab with interactive Swift Charts for laps, distance,
+elapsed time, and pace over date. Click or drag across a chart to inspect the
+nearest saved run. Pinch over the chart to zoom the date axis; two-finger
+scroll over the chart to pan the visible date range.
+
+## Deploy To Applications
+
+From the project root:
+
+```bash
+scripts/deploy_laps_app.sh
+```
+
+This builds the release binary, wraps it as a minimal `.app`, installs it at
+`~/Applications/Laps.app`, and signs the bundle for local launching.
+By default the deploy script uses the first available Apple Development signing
+identity so macOS can keep Documents-folder permission stable across rebuilds.
+Set `LAPS_SIGN_IDENTITY` to override that identity.
+
+The first launch after changing from ad-hoc signing to a stable identity can
+still ask for Documents access once because macOS treats the app as having a new
+privacy identity.
+
+## Testing Practice
+
+Prefer non-intrusive testing so the app does not steal focus while the machine
+is in use. Run `swift test`, `swift build`, data validation, deploy/signing
+checks, and generated visual snapshots first. If visual QA needs screenshots,
+write them under `build/visual-qa/` without foregrounding the installed app
+whenever possible. Only use foreground macOS UI automation after confirming with
+the user in that turn.
+
+## App Icon
+
+The app icon is generated from the accepted 1 m running-line geometry:
+
+```bash
+scripts/generate_laps_icon.py
+```
+
+Generated assets live under `Assets/AppIcon/`. The deploy script refreshes the
+icon when the generator or source GeoJSON is newer than the `.icns` file, then
+copies `Laps.icns` into the installed app bundle.
+
+The generator also writes:
+
+- `Laps-icon-candidates.png`: side-by-side rendering-mode previews.
+- `Candidates/*.png`: flattened previews for default, dark, clear, and tinted
+  appearances.
+- `IconComposerLayers/*.svg`: vector layers intended for Apple's Icon Composer
+  workflow, including monochrome/tint masks.
+
+The `.icns` is a flattened fallback for the current SwiftPM app bundle. For a
+future Xcode project, import the `IconComposerLayers` SVGs into Icon Composer
+and annotate Default, Dark, and Mono rendering modes there.

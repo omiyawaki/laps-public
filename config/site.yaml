@@ -1,0 +1,87 @@
+site:
+  name: Example Loop
+  description: >
+    Running loop around the green space bounded by Loop N and Loop S
+    between First Cross Street and Second Cross Street in Example City, New York.
+  center:
+    latitude: 0.0010000
+    longitude: 0.0010000
+    source_text: placeholder coordinates
+  roads:
+    primary:
+      - Loop N
+      - Loop S
+    cross_streets:
+      - First Cross Street
+      - Second Cross Street
+
+measurement:
+  intended_offset:
+    feet: 3.280839895
+    meters: 1.0
+  target_use: marathon training lap-count estimates
+  milestones_m:
+    five_k: 5000
+    ten_k: 10000
+    half_marathon: 21097.5
+    marathon: 42195
+  crs:
+    preferred_measurement: EPSG:32115
+    preferred_measurement_name: NAD83 / New York East, meters
+    interchange: EPSG:26918
+    interchange_name: NAD83 / UTM zone 18N, meters
+    notes: >
+      Use a projected CRS for offsets and lengths. EPSG:32115 is the local
+      State Plane meter CRS for eastern New York; EPSG:26918 is useful because
+      NYS Streets is served in UTM zone 18N.
+
+imagery_crop:
+  strategy: nys_streets_loop_bbox
+  street_query_radius_m: 350
+  margin_m: 20
+  target_m_per_px: 0.3
+  max_size_px: 2400
+  selected_street_labels:
+    - Loop N
+    - Loop S
+  selected_street_objectids:
+    - 000001
+    - 000002
+  note: >
+    Derive the working crop from the two public NYS Streets centerline features
+    where Loop N and Loop S form the closed loop, then expand the
+    projected bounding box by margin_m. This avoids manual pixel-edge cropping
+    while keeping the imagery lean. The selected OBJECTIDs are the initial
+    source-derived segment lock; if NYS Streets changes, rerun source discovery
+    before updating them.
+
+sources:
+  nys_orthoimagery:
+    page: https://gis.ny.gov/orthoimagery
+    service_2024: https://orthos.its.ny.gov/arcgis/rest/services/wms/2024/MapServer
+    latest_index: https://services6.arcgis.com/EbVsqZ18sv1kVJ3k/arcgis/rest/services/NYS_Orthoimagery_Latest_Index/FeatureServer
+    all_years_index: https://services6.arcgis.com/EbVsqZ18sv1kVJ3k/arcgis/rest/services/NYS_Orthoimagery_All_Years_Index/FeatureServer
+    note: >
+      The AOI is covered by 2024 and 2021 imagery in the latest index. Use the
+      2024 service as the first imagery base.
+  nys_streets:
+    page: https://gis.ny.gov/streets-addresses
+    feature_layer: https://services6.arcgis.com/EbVsqZ18sv1kVJ3k/arcgis/rest/services/NYS_Streets/FeatureServer/0
+    note: >
+      Useful for named-road discovery and centerline sanity checks. It is not a
+      curb or pavement-edge source.
+  nys_lidar:
+    page: https://gis.ny.gov/lidar
+    elevation_page: https://gis.ny.gov/elevation
+    latest_collections_layer: https://elevation.its.ny.gov/arcgis/rest/services/indexes/Latest_LiDAR_Collections/FeatureServer/0
+    note: >
+      The AOI intersects FEMA 2019 and regional 2008 collections.
+      FEMA 2019 tile 18TXX000000 has been isolated for both LAS point-cloud
+      and 1 m DEM review. Treat LiDAR as supplemental evidence because the
+      ground-classified LAS returns are roughly half-meter spacing in the crop.
+  example_county_gis:
+    maps_experience: https://experience.arcgis.com/experience/8b462d7c4ebb439b96fa3a55cb2a9976/
+    item_json: https://www.arcgis.com/sharing/rest/content/items/8b462d7c4ebb439b96fa3a55cb2a9976?f=json
+    note: >
+      Public county web maps were checked first. No curb, sidewalk, or
+      edge-of-pavement layer has been found there yet.
