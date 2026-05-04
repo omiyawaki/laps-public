@@ -13,12 +13,16 @@ struct RunChartsView: View {
 
     private var points: [RunChartPoint] {
         entries.compactMap { entry in
-            guard let value = metric.value(for: entry, track: track(for: entry)) else {
+            guard let value = activeMetric.value(for: entry, track: track(for: entry)) else {
                 return nil
             }
             return RunChartPoint(entry: entry, value: value)
         }
         .sorted { $0.date < $1.date }
+    }
+
+    private var availableMetrics: [RunChartMetric] {
+        RunChartMetric.available(forAllTracks: selectedTrack == nil)
     }
 
     private var selectedPoint: RunChartPoint? {
@@ -30,6 +34,18 @@ struct RunChartsView: View {
         }
         return points.min {
             abs($0.date.timeIntervalSince(selectedDate)) < abs($1.date.timeIntervalSince(selectedDate))
+        }
+    }
+
+    private var activeMetric: RunChartMetric {
+        availableMetrics.contains(metric) ? metric : availableMetrics[0]
+    }
+
+    private var metricSelection: Binding<RunChartMetric> {
+        Binding {
+            activeMetric
+        } set: { newMetric in
+            metric = newMetric
         }
     }
 
@@ -49,7 +65,7 @@ struct RunChartsView: View {
                 Text("\(selectedTrack?.name ?? "All Tracks") Graphs")
                     .font(.title3.bold())
                 Spacer()
-                Text("\(points.count) runs with \(metric.label.lowercased()) data")
+                Text("\(points.count) runs with \(activeMetric.label.lowercased()) data")
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Button {
@@ -64,8 +80,8 @@ struct RunChartsView: View {
                 Text("Metric")
                     .font(.headline)
                     .foregroundStyle(.secondary)
-                Picker("Metric", selection: $metric) {
-                    ForEach(RunChartMetric.allCases) { metric in
+                Picker("Metric", selection: metricSelection) {
+                    ForEach(availableMetrics) { metric in
                         Text(metric.label).tag(metric)
                     }
                 }
@@ -77,16 +93,23 @@ struct RunChartsView: View {
                     visibleDateRange = nil
                 }
             }
+            .onChange(of: selectedTrack?.id) {
+                if !availableMetrics.contains(metric) {
+                    metric = availableMetrics[0]
+                }
+                selectedDate = nil
+                visibleDateRange = nil
+            }
 
             HStack(spacing: 12) {
-                RunChartStatTile(title: "Selected", value: selectedPoint.map { metric.formatted($0.value) } ?? "-")
-                RunChartStatTile(title: "Latest", value: points.last.map { metric.formatted($0.value) } ?? "-")
-                RunChartStatTile(title: metric.bestTitle, value: bestValue)
+                RunChartStatTile(title: "Selected", value: selectedPoint.map { activeMetric.formatted($0.value) } ?? "-")
+                RunChartStatTile(title: "Latest", value: points.last.map { activeMetric.formatted($0.value) } ?? "-")
+                RunChartStatTile(title: activeMetric.bestTitle, value: bestValue)
                 RunChartStatTile(title: "Total", value: totalValue)
             }
 
             if points.isEmpty {
-                ContentUnavailableView("No Data", systemImage: "chart.xyaxis.line", description: Text(metric.emptyMessage))
+                ContentUnavailableView("No Data", systemImage: "chart.xyaxis.line", description: Text(activeMetric.emptyMessage))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 chart
@@ -104,16 +127,16 @@ struct RunChartsView: View {
             ForEach(points) { point in
                 LineMark(
                     x: .value("Date", point.date),
-                    y: .value(metric.label, point.value)
+                    y: .value(activeMetric.label, point.value)
                 )
-                .foregroundStyle(metric.tint)
+                .foregroundStyle(activeMetric.tint)
                 .interpolationMethod(.catmullRom)
 
                 PointMark(
                     x: .value("Date", point.date),
-                    y: .value(metric.label, point.value)
+                    y: .value(activeMetric.label, point.value)
                 )
-                .foregroundStyle(metric.tint)
+                .foregroundStyle(activeMetric.tint)
                 .symbolSize(point.id == selectedPoint?.id ? 72 : 26)
             }
 
@@ -136,9 +159,9 @@ struct RunChartsView: View {
 
                 PointMark(
                     x: .value("Selected date", selectedPoint.date),
-                    y: .value(metric.label, selectedPoint.value)
+                    y: .value(activeMetric.label, selectedPoint.value)
                 )
-                .foregroundStyle(metric.tint)
+                .foregroundStyle(activeMetric.tint)
                 .symbolSize(120)
             }
         }
@@ -149,7 +172,7 @@ struct RunChartsView: View {
         .chartYAxis {
             AxisMarks(values: .automatic(desiredCount: 6))
         }
-        .chartYAxisLabel(metric.yAxisLabel)
+        .chartYAxisLabel(activeMetric.yAxisLabel)
         .chartOverlay { proxy in
             GeometryReader { geometry in
                 if let plotFrame = proxy.plotFrame {
@@ -248,7 +271,7 @@ struct RunChartsView: View {
         guard let selectedTrack else {
             return []
         }
-        switch metric {
+        switch activeMetric {
         case .laps:
             return selectedTrack.milestones.map {
                 RunChartReferenceMark(label: $0.label, value: Double($0.firstWholeLapAtOrOver(for: selectedTrack)), color: Color(hex: $0.colorHex))
@@ -263,16 +286,16 @@ struct RunChartsView: View {
     }
 
     private var bestValue: String {
-        guard let value = metric.bestValue(in: points.map(\.value)) else {
+        guard let value = activeMetric.bestValue(in: points.map(\.value)) else {
             return "-"
         }
-        return metric.formatted(value)
+        return activeMetric.formatted(value)
     }
 
     private var totalValue: String {
-        switch metric {
+        switch activeMetric {
         case .laps, .distance, .elapsed, .gain:
-            return metric.formatted(points.reduce(0) { $0 + $1.value })
+            return activeMetric.formatted(points.reduce(0) { $0 + $1.value })
         case .pace:
             guard !points.isEmpty else {
                 return "-"
@@ -286,7 +309,7 @@ struct RunChartsView: View {
             guard totalSeconds > 0, totalMiles > 0 else {
                 return "-"
             }
-            return metric.formatted(totalSeconds / totalMiles / 60)
+            return activeMetric.formatted(totalSeconds / totalMiles / 60)
         }
     }
 
@@ -342,6 +365,13 @@ private enum RunChartMetric: String, CaseIterable, Identifiable {
     case gain
 
     var id: Self { self }
+
+    static func available(forAllTracks: Bool) -> [RunChartMetric] {
+        if forAllTracks {
+            return [.distance, .elapsed, .pace, .gain]
+        }
+        return allCases
+    }
 
     var label: String {
         switch self {

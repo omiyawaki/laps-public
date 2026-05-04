@@ -52,7 +52,9 @@ as the log grows.
 The app has a Graphs tab with interactive Swift Charts for laps, distance,
 elapsed time, pace, and elevation gain over date. Click or drag across a chart
 to inspect the nearest saved run. Pinch over the chart to zoom the date axis;
-two-finger scroll over the chart to pan the visible date range.
+two-finger scroll over the chart to pan the visible date range. The Laps metric
+is shown only for a selected track, because lap counts are not directly
+comparable across different tracks.
 
 ## Deploy To Applications
 

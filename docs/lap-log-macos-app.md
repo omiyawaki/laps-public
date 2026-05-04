@@ -60,7 +60,9 @@ Use SwiftUI for a native macOS app.
 - Graphs page: interactive Swift Charts for laps, distance, elevation gain,
   elapsed time, and pace over date. Selecting or dragging over the chart shows
   the nearest run and its exact metric values. Trackpad pinch zooms the date
-  axis; two-finger scroll pans the visible date range.
+  axis; two-finger scroll pans the visible date range. The all-tracks graph
+  scope omits lap count because laps from different tracks are not directly
+  comparable.
 
 Avoid a dashboard-heavy or gamified interface. This is a training utility: fast
 entry, clear feedback, and durable local records matter more than decoration.
