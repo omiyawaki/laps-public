@@ -159,6 +159,35 @@ def ortho_tile_index_hits(service_url: str, lon: float, lat: float) -> list[dict
     return sorted(hits, key=lambda item: (item["resolution_ft"], -(item.get("year") or 0), item["layer_id"]))
 
 
+def point_hits_for_feature_server(
+    service_url: str,
+    lon: float,
+    lat: float,
+    *,
+    out_fields: str = "*",
+) -> list[dict[str, Any]]:
+    metadata = fetch_json(service_url.rstrip("/"), {"f": "json"})
+    hits: list[dict[str, Any]] = []
+    for layer in metadata.get("layers", []):
+        layer_url = f"{service_url.rstrip('/')}/{layer['id']}"
+        try:
+            result = point_query(layer_url, lon, lat, return_geometry=False, out_fields=out_fields)
+        except RuntimeError:
+            try:
+                result = point_query(layer_url, lon, lat, return_geometry=False, out_fields="*")
+            except RuntimeError:
+                continue
+        for attrs in attributes(result):
+            hits.append(
+                {
+                    "layer_id": layer["id"],
+                    "layer_name": layer.get("name"),
+                    **attrs,
+                }
+            )
+    return hits
+
+
 def attributes(features_json: dict[str, Any]) -> list[dict[str, Any]]:
     return [dict(feature.get("attributes", {})) for feature in features_json.get("features", [])]
 
@@ -211,6 +240,24 @@ def main() -> None:
         "lidar_latest_collections": {
             "query_url": query_url(lidar["latest_collections_layer"]),
             "features": attributes(point_query(lidar["latest_collections_layer"], lon, lat)),
+        },
+        "lidar_las_tile_index_hits": {
+            "service_url": lidar["las_indexes"],
+            "features": point_hits_for_feature_server(
+                lidar["las_indexes"],
+                lon,
+                lat,
+                out_fields="COLLECTION_NAME,DIRECT_DL,FTP_PATH,FILENAME,SIZE_GB",
+            ),
+        },
+        "lidar_dem_tile_index_hits": {
+            "service_url": lidar["dem_indexes"],
+            "features": point_hits_for_feature_server(
+                lidar["dem_indexes"],
+                lon,
+                lat,
+                out_fields="FILENAME,DIRECT_DL,FTP_PATH,COLLECTION,YEAR,DEM_COLLEC,TILE_DATE,SIZE_",
+            ),
         },
         "nearby_streets": {
             "query_url": query_url(streets["feature_layer"]),
