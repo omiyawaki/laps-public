@@ -13,21 +13,12 @@ MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
 PLIST="$CONTENTS_DIR/Info.plist"
 RUNS_FILE="$PROJECT_ROOT/data/app/lap-log/runs.json"
-ICON_FILE="$APP_SOURCE_DIR/Assets/AppIcon/Laps.icns"
-ICON_SOURCE="$PROJECT_ROOT/geometry/running-line-1m-visual-candidate.geojson"
+APP_ICON_DIR="$APP_SOURCE_DIR/Assets/AppIcon"
 SIGN_IDENTITY="${LAPS_SIGN_IDENTITY:-${LAPS_SIGN_IDENTITY_UNUSED:-}}"
 
 mkdir -p "$(dirname "$RUNS_FILE")"
 if [[ ! -f "$RUNS_FILE" ]]; then
   printf '[]\n' > "$RUNS_FILE"
-fi
-
-if [[ ! -f "$ICON_FILE" || "$PROJECT_ROOT/scripts/generate_laps_icon.py" -nt "$ICON_FILE" || "$ICON_SOURCE" -nt "$ICON_FILE" ]]; then
-  if [[ ! -x "$PROJECT_ROOT/.venv/bin/python" ]]; then
-    echo "Missing project Python environment at $PROJECT_ROOT/.venv/bin/python" >&2
-    exit 1
-  fi
-  "$PROJECT_ROOT/.venv/bin/python" "$PROJECT_ROOT/scripts/generate_laps_icon.py"
 fi
 
 cd "$APP_SOURCE_DIR"
@@ -38,14 +29,6 @@ if [[ -d "$APP_BUNDLE" ]]; then
   find "$APP_BUNDLE" -maxdepth 1 -name '*.bundle' -exec rm -rf {} +
 fi
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
-cp ".build/release/$BINARY_NAME" "$MACOS_DIR/$BINARY_NAME"
-chmod 755 "$MACOS_DIR/$BINARY_NAME"
-cp "$ICON_FILE" "$RESOURCES_DIR/Laps.icns"
-for RESOURCE_BUNDLE in .build/release/*.bundle .build/release/*.resources; do
-  if [[ -e "$RESOURCE_BUNDLE" ]]; then
-    cp -R "$RESOURCE_BUNDLE" "$RESOURCES_DIR/"
-  fi
-done
 
 cat > "$PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -63,7 +46,7 @@ cat > "$PLIST" <<PLIST
   <string>$APP_NAME</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
-  <key>CFBundleIconFile</key>
+  <key>CFBundleIconName</key>
   <string>Laps</string>
   <key>CFBundleName</key>
   <string>$APP_NAME</string>
@@ -84,6 +67,18 @@ cat > "$PLIST" <<PLIST
 </dict>
 </plist>
 PLIST
+
+"$PROJECT_ROOT/scripts/build_laps_icon.sh" --verify-plist "$PLIST"
+
+cp ".build/release/$BINARY_NAME" "$MACOS_DIR/$BINARY_NAME"
+chmod 755 "$MACOS_DIR/$BINARY_NAME"
+cp "$APP_ICON_DIR/Laps.icns" "$RESOURCES_DIR/Laps.icns"
+cp "$APP_ICON_DIR/Assets.car" "$RESOURCES_DIR/Assets.car"
+for RESOURCE_BUNDLE in .build/release/*.bundle .build/release/*.resources; do
+  if [[ -e "$RESOURCE_BUNDLE" ]]; then
+    cp -R "$RESOURCE_BUNDLE" "$RESOURCES_DIR/"
+  fi
+done
 
 if command -v codesign >/dev/null 2>&1; then
   if [[ -z "$SIGN_IDENTITY" ]] && command -v security >/dev/null 2>&1; then

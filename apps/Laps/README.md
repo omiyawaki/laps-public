@@ -90,27 +90,31 @@ the user in that turn.
 
 ## App Icon
 
-The app icon is generated from the accepted 1 m running-line geometry:
+The app icon uses Apple's Icon Composer workflow. The source of truth is the
+project-specific document at:
 
-```bash
-scripts/generate_laps_icon.py
+```text
+Assets/AppIcon/Laps.icon
 ```
 
-Generated assets live under `Assets/AppIcon/`. The deploy script refreshes the
-icon when the generator or source GeoJSON is newer than the `.icns` file, then
-copies `Laps.icns` into the installed app bundle.
+The layered artwork is generated from the accepted 1 m running-line geometry,
+then compiled with the shared `icon-composer-build` tool:
 
-The generator also writes:
+```bash
+scripts/build_laps_icon.sh
+```
 
-- `Laps-icon-candidates.png`: side-by-side rendering-mode previews.
-- `Candidates/*.png`: flattened previews for default, dark, clear, and tinted
-  appearances.
-- `IconComposerLayers/*.svg`: vector layers intended for Apple's Icon Composer
-  workflow, including monochrome/tint masks.
+The script writes compatibility outputs under `Assets/AppIcon/`:
 
-The `.icns` is a flattened fallback for the current SwiftPM app bundle. For a
-future Xcode project, import the `IconComposerLayers` SVGs into Icon Composer
-and annotate Default, Dark, and Mono rendering modes there.
+- `Laps.png`
+- `Laps.icns`
+- `Assets.car`
+
+It also writes default, dark, clear, and tinted rendition previews plus the
+small-size review sheet under `build/laps-app-icon/`. The deploy script calls
+this icon build and copies both `Laps.icns` and `Assets.car` into
+`~/Applications/Laps.app`; the app plist uses `CFBundleIconName` so macOS can
+use the adaptive Icon Composer assets.
 
 ## Track Thumbnails
 

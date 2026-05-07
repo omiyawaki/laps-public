@@ -78,8 +78,8 @@ marathon training, where small per-lap errors compound over more than 100 laps.
 - `apps/Laps/` contains the native macOS lap logging app with default all-track
   aggregation, a searchable measured-track sidebar, and built-in standard-track
   lanes 1-6.
-- `scripts/generate_laps_icon.py` generates the app icon from the
-  production running-line GeoJSON.
+- `scripts/build_laps_icon.sh` generates the Icon Composer app icon from the
+  production running-line GeoJSON and exports compatibility assets.
 - `scripts/generate_track_thumbnail.py` generates bundled track thumbnails
   from the ortho crop and accepted track geometry.
 - `scripts/summarize_apple_health_export.py` summarizes Apple Health workout
