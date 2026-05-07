@@ -173,13 +173,17 @@ def background_svg(appearance: str) -> str:
 
 def route_base_svg(path_d: str, appearance: str) -> str:
     if appearance == "dark":
-        outer = "#DDF7EF"
-        mid_a = "#77D8C3"
-        mid_b = "#2D91A4"
-        center = "#174A55"
-        edge = "#F8FFFC"
+        outer = "#7DB8B0"
+        mid_a = "#51AFA3"
+        mid_b = "#1D6978"
+        center = "#0E3039"
+        edge = "#CFF7EA"
         shadow = "#001118"
         shadow_opacity = "0.30"
+        shadow_width = "66"
+        outer_width = "46"
+        core_width = "24"
+        edge_width = "4"
     elif appearance == "tinted":
         outer = "#F4F7F7"
         mid_a = "#879EA0"
@@ -188,6 +192,10 @@ def route_base_svg(path_d: str, appearance: str) -> str:
         edge = "#FFFFFF"
         shadow = "#38484D"
         shadow_opacity = "0.20"
+        shadow_width = "104"
+        outer_width = "84"
+        core_width = "50"
+        edge_width = "7"
     else:
         outer = "#F3FFF8"
         mid_a = "#A9F0D8"
@@ -196,6 +204,10 @@ def route_base_svg(path_d: str, appearance: str) -> str:
         edge = "#FFFFFF"
         shadow = "#073443"
         shadow_opacity = "0.22"
+        shadow_width = "104"
+        outer_width = "84"
+        core_width = "50"
+        edge_width = "7"
 
     return svg_document(
         f"""  <defs>
@@ -205,43 +217,72 @@ def route_base_svg(path_d: str, appearance: str) -> str:
       <stop offset="1" stop-color="{mid_b}"/>
     </linearGradient>
   </defs>
-  <path d="{path_d}" stroke="{shadow}" stroke-opacity="{shadow_opacity}" stroke-width="138" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 18)"/>
-  <path d="{path_d}" stroke="{outer}" stroke-width="112" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="{path_d}" stroke="url(#routeCore)" stroke-width="74" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="{path_d}" stroke="{edge}" stroke-opacity="0.58" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" transform="translate(-7 -9)"/>"""
+  <path d="{path_d}" stroke="{shadow}" stroke-opacity="{shadow_opacity}" stroke-width="{shadow_width}" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 16)"/>
+  <path d="{path_d}" stroke="{outer}" stroke-width="{outer_width}" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="{path_d}" stroke="url(#routeCore)" stroke-width="{core_width}" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="{path_d}" stroke="{edge}" stroke-opacity="0.58" stroke-width="{edge_width}" stroke-linecap="round" stroke-linejoin="round" transform="translate(-6 -8)"/>"""
     )
 
 
 def route_lane_svg(path_d: str, appearance: str) -> str:
     if appearance == "dark":
         lane = "#0E3B45"
-        line = "#A9F8E1"
+        line = "#86E8D0"
         opacity = "0.72"
+        lane_width = "10"
+        line_width = "3"
     elif appearance == "tinted":
         lane = "#60757A"
         line = "#F9FFFF"
         opacity = "0.66"
+        lane_width = "17"
+        line_width = "4"
     else:
         lane = "#127B76"
         line = "#EFFFF8"
         opacity = "0.72"
+        lane_width = "17"
+        line_width = "4"
 
     return svg_document(
-        f"""  <path d="{path_d}" stroke="{lane}" stroke-opacity="{opacity}" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="{path_d}" stroke="{line}" stroke-opacity="0.74" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>"""
+        f"""  <path d="{path_d}" stroke="{lane}" stroke-opacity="{opacity}" stroke-width="{lane_width}" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="{path_d}" stroke="{line}" stroke-opacity="0.74" stroke-width="{line_width}" stroke-linecap="round" stroke-linejoin="round"/>"""
+    )
+
+
+def inner_field_svg(path_d: str, appearance: str) -> str:
+    if appearance == "dark":
+        fill = "#143842"
+        stroke = "#315E61"
+        opacity = "0.98"
+        stroke_width = "18"
+    elif appearance == "tinted":
+        fill = "#D5DDDD"
+        stroke = "#EEF4F4"
+        opacity = "0.96"
+        stroke_width = "48"
+    else:
+        fill = "#ABDCCB"
+        stroke = "#E6FFF5"
+        opacity = "0.94"
+        stroke_width = "48"
+
+    return svg_document(
+        f"""  <path d="{path_d}" fill="{fill}" fill-opacity="{opacity}" stroke="{fill}" stroke-opacity="{opacity}" stroke-width="{stroke_width}" stroke-linejoin="round"/>
+  <path d="{path_d}" fill="none" stroke="{stroke}" stroke-opacity="0.32" stroke-width="8" stroke-linejoin="round"/>"""
     )
 
 
 def route_glint_svg(path_d: str, appearance: str) -> str:
-    opacity = "0.72" if appearance != "dark" else "0.58"
+    opacity = "0.72" if appearance != "dark" else "0.34"
     return svg_document(
-        f"""  <path d="{path_d}" stroke="#FFFFFF" stroke-opacity="{opacity}" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" transform="translate(-10 -13)"/>"""
+        f"""  <path d="{path_d}" stroke="#FFFFFF" stroke-opacity="{opacity}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" transform="translate(-9 -12)"/>"""
     )
 
 
 def icon_json() -> dict[str, Any]:
     return {
-        "fill": "system-light",
+        "fill": "system-dark",
         "groups": [
             {
                 "name": "Laps Icon",
@@ -249,21 +290,21 @@ def icon_json() -> dict[str, Any]:
                     "kind": "layer-color",
                     "opacity": 0.34,
                 },
-                "specular": True,
+                "specular": False,
                 "translucency": {
-                    "enabled": True,
-                    "value": 0.10,
+                    "enabled": False,
+                    "value": 0,
                 },
                 "blur-material": None,
                 "layers": [
                     {
                         "name": "Route Glint",
-                        "glass": True,
+                        "glass": False,
                         "hidden": False,
                         "image-name-specializations": [
-                            {"value": "04-route-glint.svg"},
-                            {"appearance": "dark", "value": "04-route-glint-dark.svg"},
-                            {"appearance": "tinted", "value": "04-route-glint-tinted.svg"},
+                            {"value": "05-route-glint.svg"},
+                            {"appearance": "dark", "value": "05-route-glint-dark.svg"},
+                            {"appearance": "tinted", "value": "05-route-glint-tinted.svg"},
                         ],
                         "position": {"scale": 1, "translation-in-points": [0, 0]},
                     },
@@ -272,15 +313,26 @@ def icon_json() -> dict[str, Any]:
                         "glass": False,
                         "hidden": False,
                         "image-name-specializations": [
-                            {"value": "03-route-lane.svg"},
-                            {"appearance": "dark", "value": "03-route-lane-dark.svg"},
-                            {"appearance": "tinted", "value": "03-route-lane-tinted.svg"},
+                            {"value": "04-route-lane.svg"},
+                            {"appearance": "dark", "value": "04-route-lane-dark.svg"},
+                            {"appearance": "tinted", "value": "04-route-lane-tinted.svg"},
+                        ],
+                        "position": {"scale": 1, "translation-in-points": [0, 0]},
+                    },
+                    {
+                        "name": "Inner Field",
+                        "glass": False,
+                        "hidden": False,
+                        "image-name-specializations": [
+                            {"value": "03-inner-field.svg"},
+                            {"appearance": "dark", "value": "03-inner-field-dark.svg"},
+                            {"appearance": "tinted", "value": "03-inner-field-tinted.svg"},
                         ],
                         "position": {"scale": 1, "translation-in-points": [0, 0]},
                     },
                     {
                         "name": "Measured Loop",
-                        "glass": True,
+                        "glass": False,
                         "hidden": False,
                         "image-name-specializations": [
                             {"value": "02-route-base.svg"},
@@ -319,8 +371,9 @@ def write_icon_document(output: Path, path_d: str) -> None:
     for appearance, suffix in [("default", ""), ("dark", "-dark"), ("tinted", "-tinted")]:
         (assets / f"01-background{suffix}.svg").write_text(background_svg(appearance), encoding="utf-8")
         (assets / f"02-route-base{suffix}.svg").write_text(route_base_svg(path_d, appearance), encoding="utf-8")
-        (assets / f"03-route-lane{suffix}.svg").write_text(route_lane_svg(path_d, appearance), encoding="utf-8")
-        (assets / f"04-route-glint{suffix}.svg").write_text(route_glint_svg(path_d, appearance), encoding="utf-8")
+        (assets / f"03-inner-field{suffix}.svg").write_text(inner_field_svg(path_d, appearance), encoding="utf-8")
+        (assets / f"04-route-lane{suffix}.svg").write_text(route_lane_svg(path_d, appearance), encoding="utf-8")
+        (assets / f"05-route-glint{suffix}.svg").write_text(route_glint_svg(path_d, appearance), encoding="utf-8")
 
     (output / "icon.json").write_text(json.dumps(icon_json(), indent=2) + "\n", encoding="utf-8")
 
