@@ -114,63 +114,6 @@ def svg_document(body: str) -> str:
 """
 
 
-def background_svg(appearance: str) -> str:
-    if appearance == "dark":
-        stops = [
-            ("#0B2A36", "0"),
-            ("#143D42", "0.46"),
-            ("#08141F", "1"),
-        ]
-        light_opacity = "0.18"
-        field_opacity = "0.14"
-        depth_opacity = "0.38"
-    elif appearance == "tinted":
-        stops = [
-            ("#EEF3F2", "0"),
-            ("#CAD8D7", "0.52"),
-            ("#8EA1A4", "1"),
-        ]
-        light_opacity = "0.26"
-        field_opacity = "0.16"
-        depth_opacity = "0.16"
-    else:
-        stops = [
-            ("#F3F7EC", "0"),
-            ("#70C9B0", "0.48"),
-            ("#0B7188", "1"),
-        ]
-        light_opacity = "0.42"
-        field_opacity = "0.20"
-        depth_opacity = "0.24"
-
-    return svg_document(
-        f"""  <defs>
-    <linearGradient id="bg" x1="118" y1="70" x2="922" y2="950" gradientUnits="userSpaceOnUse">
-      <stop stop-color="{stops[0][0]}" offset="{stops[0][1]}"/>
-      <stop stop-color="{stops[1][0]}" offset="{stops[1][1]}"/>
-      <stop stop-color="{stops[2][0]}" offset="{stops[2][1]}"/>
-    </linearGradient>
-    <radialGradient id="upperLight" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(282 190) rotate(42) scale(650 510)">
-      <stop stop-color="#FFFFFF" stop-opacity="{light_opacity}"/>
-      <stop offset="0.64" stop-color="#FFFFFF" stop-opacity="0.07"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="field" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(374 682) rotate(-17) scale(620 290)">
-      <stop stop-color="#D9E9C4" stop-opacity="{field_opacity}"/>
-      <stop offset="1" stop-color="#D9E9C4" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="lowerDepth" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(826 846) rotate(28) scale(470 420)">
-      <stop stop-color="#021923" stop-opacity="{depth_opacity}"/>
-      <stop offset="1" stop-color="#021923" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="1024" height="1024" fill="url(#bg)"/>
-  <rect width="1024" height="1024" fill="url(#upperLight)"/>
-  <rect width="1024" height="1024" fill="url(#field)"/>
-  <rect width="1024" height="1024" fill="url(#lowerDepth)"/>"""
-    )
-
-
 def route_base_svg(path_d: str, appearance: str) -> str:
     if appearance == "dark":
         outer = "#7DB8B0"
@@ -341,17 +284,6 @@ def icon_json() -> dict[str, Any]:
                         ],
                         "position": {"scale": 1, "translation-in-points": [0, 0]},
                     },
-                    {
-                        "name": "Background",
-                        "glass": False,
-                        "hidden": False,
-                        "image-name-specializations": [
-                            {"value": "01-background.svg"},
-                            {"appearance": "dark", "value": "01-background-dark.svg"},
-                            {"appearance": "tinted", "value": "01-background-tinted.svg"},
-                        ],
-                        "position": {"scale": 1, "translation-in-points": [0, 0]},
-                    },
                 ],
             }
         ],
@@ -369,7 +301,6 @@ def write_icon_document(output: Path, path_d: str) -> None:
     assets.mkdir(parents=True)
 
     for appearance, suffix in [("default", ""), ("dark", "-dark"), ("tinted", "-tinted")]:
-        (assets / f"01-background{suffix}.svg").write_text(background_svg(appearance), encoding="utf-8")
         (assets / f"02-route-base{suffix}.svg").write_text(route_base_svg(path_d, appearance), encoding="utf-8")
         (assets / f"03-inner-field{suffix}.svg").write_text(inner_field_svg(path_d, appearance), encoding="utf-8")
         (assets / f"04-route-lane{suffix}.svg").write_text(route_lane_svg(path_d, appearance), encoding="utf-8")
