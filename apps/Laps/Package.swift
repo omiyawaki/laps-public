@@ -10,11 +10,18 @@ let package = Package(
     products: [
         .executable(name: "Laps", targets: ["Laps"])
     ],
+    dependencies: [
+        .package(path: "/Users/USERNAME/tools/apple-app-tools")
+    ],
     targets: [
         .target(name: "LapsCore"),
         .executableTarget(
             name: "Laps",
-            dependencies: ["LapsCore"],
+            dependencies: [
+                "LapsCore",
+                .product(name: "AppleAppDesignSystem", package: "apple-app-tools"),
+                .product(name: "LocalAppUpdateKit", package: "apple-app-tools")
+            ],
             path: "Sources/Laps",
             resources: [
                 .process("Resources")

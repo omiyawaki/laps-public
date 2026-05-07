@@ -1,0 +1,51 @@
+schemaVersion: 1
+app:
+  id: laps
+  name: Laps
+  platform: macOS
+  bundlePath: ~/Applications/Laps.app
+build:
+  projectRoot: /Users/USERNAME/Documents/Projects/0001
+  swiftPackagePath: apps/Laps
+  executable: Laps
+  configuration: release
+  deployCommand: scripts/deploy_laps_app.sh
+packageDependencies:
+  - name: apple-app-tools
+    path: /Users/USERNAME/tools/apple-app-tools
+    products:
+      - AppleAppDesignSystem
+      - LocalAppUpdateKit
+components:
+  - id: icon-composer-build
+  - id: mac-app-packager
+  - id: local-update-ui
+  - id: macos-design-system
+localModules:
+  - name: Laps app UI
+    paths:
+      - apps/Laps/Sources/Laps
+  - name: Laps measurement core
+    paths:
+      - apps/Laps/Sources/LapsCore
+  - name: Laps app assets
+    paths:
+      - apps/Laps/Assets
+fingerprint:
+  include:
+    - apps/Laps/Package.swift
+    - apps/Laps/Sources
+    - apps/Laps/Assets/AppIcon/Laps.icon
+    - scripts/deploy_laps_app.sh
+    - scripts/build_laps_icon.sh
+    - scripts/generate_laps_icon.py
+  exclude:
+    - apps/Laps/.build
+    - .apple-app-tools
+    - APPLE_APP_MAP.md
+    - build
+customCode:
+  allow:
+    - apps/Laps/Sources
+    - apps/Laps/Assets
+    - scripts

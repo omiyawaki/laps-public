@@ -1,12 +1,15 @@
+import AppleAppDesignSystem
 import LapsCore
 import AppKit
 import Foundation
+import LocalAppUpdateKit
 import SwiftUI
 
 private let allTracksSelectionID = "all_tracks"
 
 struct ContentView: View {
     @EnvironmentObject private var store: RunStore
+    @StateObject private var updateController = LocalAppUpdateController()
     @AppStorage("selectedDetailPage") private var selectedDetailPage = DetailPage.log.rawValue
     @State private var selectedScopeID = allTracksSelectionID
     @State private var entryTrackID = TrackCatalog.defaultTrackID
@@ -138,6 +141,14 @@ struct ContentView: View {
             if let selectedTrack {
                 entryTrackID = selectedTrack.id
             }
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                LocalAppUpdateToolbarButton(controller: updateController)
+            }
+        }
+        .task {
+            await updateController.checkForUpdates()
         }
         .sheet(item: $editingRunDraft) { draft in
             RunEditSheet(

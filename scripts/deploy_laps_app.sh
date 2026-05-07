@@ -8,13 +8,17 @@ BINARY_NAME="Laps"
 INSTALL_DIR="$HOME/Applications"
 APP_BUNDLE="$INSTALL_DIR/$APP_NAME.app"
 OLD_APP_BUNDLE="$INSTALL_DIR/Laps.app"
-CONTENTS_DIR="$APP_BUNDLE/Contents"
-MACOS_DIR="$CONTENTS_DIR/MacOS"
-RESOURCES_DIR="$CONTENTS_DIR/Resources"
-PLIST="$CONTENTS_DIR/Info.plist"
+BUILD_DIR="$PROJECT_ROOT/build/laps-app"
+PLIST="$BUILD_DIR/Info.plist"
 RUNS_FILE="$PROJECT_ROOT/data/app/lap-log/runs.json"
 APP_ICON_DIR="$APP_SOURCE_DIR/Assets/AppIcon"
+TOOLS_REPO="${APPLE_APP_TOOLS_REPO:-/Users/USERNAME/tools/apple-app-tools}"
 SIGN_IDENTITY="${LAPS_SIGN_IDENTITY:-${LAPS_SIGN_IDENTITY_UNUSED:-}}"
+
+if [[ ! -d "$TOOLS_REPO" ]]; then
+  echo "apple-app-tools repo not found at: $TOOLS_REPO" >&2
+  exit 1
+fi
 
 mkdir -p "$(dirname "$RUNS_FILE")"
 if [[ ! -f "$RUNS_FILE" ]]; then
@@ -24,11 +28,10 @@ fi
 cd "$APP_SOURCE_DIR"
 swift build -c release
 
-rm -rf "$CONTENTS_DIR"
+mkdir -p "$BUILD_DIR"
 if [[ -d "$APP_BUNDLE" ]]; then
   find "$APP_BUNDLE" -maxdepth 1 -name '*.bundle' -exec rm -rf {} +
 fi
-mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
 cat > "$PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -70,27 +73,33 @@ PLIST
 
 "$PROJECT_ROOT/scripts/build_laps_icon.sh" --verify-plist "$PLIST"
 
-cp ".build/release/$BINARY_NAME" "$MACOS_DIR/$BINARY_NAME"
-chmod 755 "$MACOS_DIR/$BINARY_NAME"
-cp "$APP_ICON_DIR/Laps.icns" "$RESOURCES_DIR/Laps.icns"
-cp "$APP_ICON_DIR/Assets.car" "$RESOURCES_DIR/Assets.car"
+RESOURCE_ARGS=(
+  --resource "$APP_ICON_DIR/Laps.icns"
+  --resource "$APP_ICON_DIR/Assets.car"
+)
 for RESOURCE_BUNDLE in .build/release/*.bundle .build/release/*.resources; do
   if [[ -e "$RESOURCE_BUNDLE" ]]; then
-    cp -R "$RESOURCE_BUNDLE" "$RESOURCES_DIR/"
+    RESOURCE_ARGS+=(--resource "$RESOURCE_BUNDLE")
   fi
 done
 
-if command -v codesign >/dev/null 2>&1; then
-  if [[ -z "$SIGN_IDENTITY" ]] && command -v security >/dev/null 2>&1; then
-    SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '/Apple Development:/ { print $2; exit }')"
-  fi
-  if [[ -n "$SIGN_IDENTITY" ]]; then
-    codesign --force --deep --options runtime --sign "$SIGN_IDENTITY" "$APP_BUNDLE" >/dev/null
-    echo "Signed with: $SIGN_IDENTITY"
-  else
-    codesign --force --deep --sign - "$APP_BUNDLE" >/dev/null
-    echo "Signed ad-hoc; set LAPS_SIGN_IDENTITY to keep TCC permissions stable across rebuilds."
-  fi
+if [[ -z "$SIGN_IDENTITY" ]] && command -v security >/dev/null 2>&1; then
+  SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '/Apple Development:/ { print $2; exit }')"
+fi
+if [[ -n "$SIGN_IDENTITY" ]]; then
+  export APPLE_APP_SIGN_IDENTITY="$SIGN_IDENTITY"
+fi
+
+swift run --package-path "$TOOLS_REPO" -c release apple-app-tools mac package \
+  --config "$PROJECT_ROOT/AppleAppBlueprint.yaml" \
+  --binary ".build/release/$BINARY_NAME" \
+  --plist "$PLIST" \
+  "${RESOURCE_ARGS[@]}"
+
+if [[ -n "$SIGN_IDENTITY" ]]; then
+  echo "Signed with: $SIGN_IDENTITY"
+else
+  echo "Signed ad-hoc; set LAPS_SIGN_IDENTITY to keep TCC permissions stable across rebuilds."
 fi
 
 if [[ "$OLD_APP_BUNDLE" != "$APP_BUNDLE" && -d "$OLD_APP_BUNDLE" ]]; then
