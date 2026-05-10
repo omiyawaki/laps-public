@@ -62,7 +62,7 @@ cat > "$PLIST" <<PLIST
   <key>LSApplicationCategoryType</key>
   <string>public.app-category.healthcare-fitness</string>
   <key>LSMinimumSystemVersion</key>
-  <string>14.0</string>
+  <string>26.0</string>
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>NSDocumentsFolderUsageDescription</key>

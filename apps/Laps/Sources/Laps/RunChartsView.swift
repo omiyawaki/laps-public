@@ -73,6 +73,8 @@ struct RunChartsView: View {
                 } label: {
                     Label("Reset Zoom", systemImage: "arrow.up.left.and.down.right")
                 }
+                .buttonStyle(.glass)
+                .buttonBorderShape(.roundedRectangle(radius: 8))
                 .disabled(visibleDateRange == nil)
             }
 
@@ -101,11 +103,13 @@ struct RunChartsView: View {
                 visibleDateRange = nil
             }
 
-            HStack(spacing: 12) {
-                RunChartStatTile(title: "Selected", value: selectedPoint.map { activeMetric.formatted($0.value) } ?? "-")
-                RunChartStatTile(title: "Latest", value: points.last.map { activeMetric.formatted($0.value) } ?? "-")
-                RunChartStatTile(title: activeMetric.bestTitle, value: bestValue)
-                RunChartStatTile(title: "Total", value: totalValue)
+            GlassEffectContainer(spacing: 12) {
+                HStack(spacing: 12) {
+                    RunChartStatTile(title: "Selected", value: selectedPoint.map { activeMetric.formatted($0.value) } ?? "-")
+                    RunChartStatTile(title: "Latest", value: points.last.map { activeMetric.formatted($0.value) } ?? "-")
+                    RunChartStatTile(title: activeMetric.bestTitle, value: bestValue)
+                    RunChartStatTile(title: "Total", value: totalValue)
+                }
             }
 
             if points.isEmpty {
@@ -341,7 +345,7 @@ struct RunChartsView: View {
                 .monospacedDigit()
         }
         .padding(12)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+        .lapsGlassCard()
     }
 
     private func track(for entry: RunEntry) -> Track {
@@ -492,7 +496,7 @@ private struct RunChartStatTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+        .lapsGlassCard()
     }
 }
 

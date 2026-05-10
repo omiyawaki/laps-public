@@ -6,6 +6,8 @@ import LocalAppUpdateKit
 import SwiftUI
 
 private let allTracksSelectionID = "all_tracks"
+private let lapsFieldWidth: CGFloat = 92
+private let maximumRunLaps = 9_999.0
 
 struct ContentView: View {
     @EnvironmentObject private var store: RunStore
@@ -197,19 +199,17 @@ struct ContentView: View {
     private func entryPanel(track: Track) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top, spacing: 14) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("New Run")
-                        .font(.title2.bold())
+                VStack(alignment: .leading, spacing: 4) {
                     Text(track.name)
-                        .font(.headline)
-                    Text(track.location)
-                        .foregroundStyle(.secondary)
-                    Text(track.sourceDescription)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                    Text("\(track.lapLengthMeters, specifier: "%.3f") m per lap")
-                        .font(.callout.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(.title2.bold())
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(track.location)
+                        Text("\(track.lapLengthMeters, specifier: "%.3f") m per lap")
+                            .fontWeight(.medium)
+                    }
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .layoutPriority(1)
@@ -231,7 +231,11 @@ struct ContentView: View {
                 }
             }
 
-            DatePicker("Date", selection: $runDate, displayedComponents: .date)
+            HStack(alignment: .center, spacing: 12) {
+                Text("Date")
+                    .frame(width: 44, alignment: .leading)
+                RunDateField(date: $runDate)
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Laps")
@@ -239,7 +243,9 @@ struct ContentView: View {
                 HStack {
                     TextField("0", value: $laps, format: .number.precision(.fractionLength(0...2)))
                         .textFieldStyle(.roundedBorder)
-                    Stepper("", value: $laps, in: 0...300, step: 1)
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: lapsFieldWidth)
+                    Stepper("", value: $laps, in: 0...maximumRunLaps, step: 1)
                         .labelsHidden()
                 }
             }
@@ -269,7 +275,8 @@ struct ContentView: View {
                 Text("Save Run")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
+            .buttonBorderShape(.roundedRectangle(radius: 8))
             .disabled(laps <= 0)
 
             Spacer()
@@ -297,22 +304,28 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 12) {
-                DistanceTile(title: "Meters", value: distanceMeters, suffix: "m", digits: 0)
-                DistanceTile(title: "Kilometers", value: distanceMeters / 1_000, suffix: "km", digits: 3)
-                DistanceTile(title: "Miles", value: distanceMeters / DistanceUnits.metersPerMile, suffix: "mi", digits: 3)
-                DistanceTile(title: "Feet", value: distanceMeters / DistanceUnits.metersPerFoot, suffix: "ft", digits: 0)
+            GlassEffectContainer(spacing: 12) {
+                HStack(spacing: 12) {
+                    DistanceTile(title: "Meters", value: distanceMeters, suffix: "m", digits: 0)
+                    DistanceTile(title: "Kilometers", value: distanceMeters / 1_000, suffix: "km", digits: 3)
+                    DistanceTile(title: "Miles", value: distanceMeters / DistanceUnits.metersPerMile, suffix: "mi", digits: 3)
+                    DistanceTile(title: "Feet", value: distanceMeters / DistanceUnits.metersPerFoot, suffix: "ft", digits: 0)
+                }
             }
 
-            HStack(spacing: 12) {
-                ValueTile(title: "Elapsed", value: durationString(elapsedSeconds))
-                ValueTile(title: "Pace", value: paceString(laps: laps, elapsedSeconds: elapsedSeconds, track: entryTrack))
-                ValueTile(title: "Gain", value: elevationGainString(feet: entryTrack.elevationGainFeet(forLaps: laps)))
+            GlassEffectContainer(spacing: 12) {
+                HStack(spacing: 12) {
+                    ValueTile(title: "Elapsed", value: durationString(elapsedSeconds))
+                    ValueTile(title: "Pace", value: paceString(laps: laps, elapsedSeconds: elapsedSeconds, track: entryTrack))
+                    ValueTile(title: "Gain", value: elevationGainString(feet: entryTrack.elevationGainFeet(forLaps: laps)))
+                }
             }
 
-            HStack(spacing: 8) {
-                ForEach(entryTrack.milestones) { milestone in
-                    MilestoneChip(milestone: milestone, track: entryTrack, distanceMeters: distanceMeters, laps: laps)
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) {
+                    ForEach(entryTrack.milestones) { milestone in
+                        MilestoneChip(milestone: milestone, track: entryTrack, distanceMeters: distanceMeters, laps: laps)
+                    }
                 }
             }
         }
@@ -329,23 +342,29 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 12) {
-                ValueTile(title: "Total Laps", value: LoopMeasurement.lapsString(totals.totalLaps))
-                ValueTile(title: "Total Miles", value: totals.distanceSummary)
-                ValueTile(title: "Total Time", value: durationString(totals.totalElapsedSeconds))
-                ValueTile(title: "Average Pace", value: paceString(secondsPerMile: totals.averagePaceSecondsPerMile))
-            }
-
-            HStack(spacing: 12) {
-                ValueTile(title: "Total Gain", value: elevationGainString(feet: totals.totalElevationGainFeet))
-                if let elevationSource = elevationSourceSummary {
-                    ValueTile(title: "Elevation Source", value: elevationSource)
+            GlassEffectContainer(spacing: 12) {
+                HStack(spacing: 12) {
+                    ValueTile(title: "Total Laps", value: LoopMeasurement.lapsString(totals.totalLaps))
+                    ValueTile(title: "Total Miles", value: totals.distanceSummary)
+                    ValueTile(title: "Total Time", value: durationString(totals.totalElapsedSeconds))
+                    ValueTile(title: "Average Pace", value: paceString(secondsPerMile: totals.averagePaceSecondsPerMile))
                 }
             }
 
-            HStack(spacing: 12) {
-                ForEach(DistanceReference.references(forMeters: totals.totalMeters)) { reference in
-                    ReferenceTile(reference: reference, totalMeters: totals.totalMeters)
+            GlassEffectContainer(spacing: 12) {
+                HStack(spacing: 12) {
+                    ValueTile(title: "Total Gain", value: elevationGainString(feet: totals.totalElevationGainFeet))
+                    if let elevationSource = elevationSourceSummary {
+                        ValueTile(title: "Elevation Source", value: elevationSource)
+                    }
+                }
+            }
+
+            GlassEffectContainer(spacing: 12) {
+                HStack(spacing: 12) {
+                    ForEach(DistanceReference.references(forMeters: totals.totalMeters)) { reference in
+                        ReferenceTile(reference: reference, totalMeters: totals.totalMeters)
+                    }
                 }
             }
         }
@@ -380,40 +399,80 @@ struct ContentView: View {
                 .help("Delete selected run")
             }
 
-            Table(selectedEntries, selection: $selectedRunIDs) {
-                TableColumn("Date") { entry in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(entry.date.formatted(date: .abbreviated, time: .omitted))
-                        if selectedTrack == nil {
-                            Text(track(for: entry).name)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .width(min: 110, ideal: 130, max: 150)
-                TableColumn("Laps") { entry in
-                    Text(LoopMeasurement.lapsString(entry.laps))
-                }
-                .width(min: 54, ideal: 64, max: 76)
-                TableColumn("Distance") { entry in
-                    let miles = track(for: entry).distanceMiles(forLaps: entry.laps)
-                    Text("\(miles, specifier: "%.3f") mi")
-                }
-                .width(min: 90, ideal: 108, max: 122)
-                TableColumn("Gain") { entry in
-                    Text(elevationGainString(feet: track(for: entry).elevationGainFeet(forLaps: entry.laps)))
-                }
-                .width(min: 72, ideal: 82, max: 96)
-                TableColumn("Elapsed") { entry in
-                    Text(durationString(entry.elapsedSeconds))
-                }
-                .width(min: 78, ideal: 92, max: 106)
-                TableColumn("Pace") { entry in
-                    Text(paceString(laps: entry.laps, elapsedSeconds: entry.elapsedSeconds, track: track(for: entry)))
-                }
-                .width(min: 86, ideal: 104, max: 116)
+            if selectedTrack == nil {
+                allTracksRunTable
+            } else {
+                trackRunTable
             }
+        }
+    }
+
+    private var allTracksRunTable: some View {
+        Table(selectedEntries, selection: $selectedRunIDs) {
+            TableColumn("ID") { entry in
+                let track = track(for: entry)
+                Text(track.shortCode)
+                    .font(.system(.caption, design: .monospaced).weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .help(track.name)
+            }
+            .width(min: 26, ideal: 28, max: 30)
+            TableColumn("Date") { entry in
+                Text(entry.date.formatted(date: .abbreviated, time: .omitted))
+            }
+            .width(min: 96, ideal: 104, max: 112)
+            TableColumn("Laps") { entry in
+                Text(LoopMeasurement.lapsString(entry.laps))
+            }
+            .width(min: 42, ideal: 48, max: 54)
+            TableColumn("Distance") { entry in
+                let miles = track(for: entry).distanceMiles(forLaps: entry.laps)
+                Text("\(miles, specifier: "%.3f") mi")
+            }
+            .width(min: 78, ideal: 86, max: 94)
+            TableColumn("Gain") { entry in
+                Text(elevationGainString(feet: track(for: entry).elevationGainFeet(forLaps: entry.laps)))
+            }
+            .width(min: 58, ideal: 66, max: 74)
+            TableColumn("Elapsed") { entry in
+                Text(durationString(entry.elapsedSeconds))
+            }
+            .width(min: 66, ideal: 74, max: 82)
+            TableColumn("Pace") { entry in
+                Text(paceString(laps: entry.laps, elapsedSeconds: entry.elapsedSeconds, track: track(for: entry)))
+            }
+            .width(min: 72, ideal: 82, max: 92)
+        }
+    }
+
+    private var trackRunTable: some View {
+        Table(selectedEntries, selection: $selectedRunIDs) {
+            TableColumn("Date") { entry in
+                Text(entry.date.formatted(date: .abbreviated, time: .omitted))
+            }
+            .width(min: 96, ideal: 104, max: 112)
+            TableColumn("Laps") { entry in
+                Text(LoopMeasurement.lapsString(entry.laps))
+            }
+            .width(min: 42, ideal: 48, max: 54)
+            TableColumn("Distance") { entry in
+                let miles = track(for: entry).distanceMiles(forLaps: entry.laps)
+                Text("\(miles, specifier: "%.3f") mi")
+            }
+            .width(min: 78, ideal: 86, max: 94)
+            TableColumn("Gain") { entry in
+                Text(elevationGainString(feet: track(for: entry).elevationGainFeet(forLaps: entry.laps)))
+            }
+            .width(min: 58, ideal: 66, max: 74)
+            TableColumn("Elapsed") { entry in
+                Text(durationString(entry.elapsedSeconds))
+            }
+            .width(min: 66, ideal: 74, max: 82)
+            TableColumn("Pace") { entry in
+                Text(paceString(laps: entry.laps, elapsedSeconds: entry.elapsedSeconds, track: track(for: entry)))
+            }
+            .width(min: 72, ideal: 82, max: 92)
         }
     }
 }
@@ -430,6 +489,101 @@ private struct DurationInput: View {
             DurationUnitField(title: "sec", value: $seconds, range: 0...59)
         }
         .accessibilityElement(children: .contain)
+    }
+}
+
+private struct RunDateField: View {
+    @Binding var date: Date
+    @State private var draftText = ""
+    @FocusState private var isFocused: Bool
+
+    private var calendar: Calendar {
+        Calendar.current
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            TextField("", text: $draftText)
+                .textFieldStyle(.roundedBorder)
+                .monospacedDigit()
+                .frame(width: 116)
+                .focused($isFocused)
+                .onSubmit {
+                    commitDraft()
+                }
+
+            Stepper(
+                "Date",
+                onIncrement: {
+                    shiftDate(by: 1)
+                },
+                onDecrement: {
+                    shiftDate(by: -1)
+                }
+            )
+            .labelsHidden()
+        }
+        .onAppear {
+            syncDraftText()
+        }
+        .onChange(of: date) {
+            if !isFocused {
+                syncDraftText()
+            }
+        }
+        .onChange(of: draftText) {
+            updateDateFromCompleteDraft()
+        }
+        .onChange(of: isFocused) {
+            if isFocused {
+                syncDraftText()
+            } else {
+                commitDraft()
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Date")
+    }
+
+    private func commitDraft() {
+        guard let parsedDate = RunDateFormatting.date(
+            fromDisplayString: draftText,
+            preservingTimeFrom: date,
+            calendar: calendar
+        ) else {
+            syncDraftText()
+            return
+        }
+
+        date = parsedDate
+        draftText = RunDateFormatting.displayString(for: parsedDate, timeZone: calendar.timeZone)
+    }
+
+    private func updateDateFromCompleteDraft() {
+        guard isFocused,
+              draftText.trimmingCharacters(in: .whitespacesAndNewlines).count == RunDateFormatting.displayFormat.count,
+              let parsedDate = RunDateFormatting.date(
+                fromDisplayString: draftText,
+                preservingTimeFrom: date,
+                calendar: calendar
+              ) else {
+            return
+        }
+
+        date = parsedDate
+    }
+
+    private func shiftDate(by days: Int) {
+        guard let shiftedDate = calendar.date(byAdding: .day, value: days, to: date) else {
+            return
+        }
+
+        date = shiftedDate
+        draftText = RunDateFormatting.displayString(for: shiftedDate, timeZone: calendar.timeZone)
+    }
+
+    private func syncDraftText() {
+        draftText = RunDateFormatting.displayString(for: date, timeZone: calendar.timeZone)
     }
 }
 
@@ -541,7 +695,9 @@ private struct RunEditSheet: View {
                     HStack {
                         TextField("0", value: $draft.laps, format: .number.precision(.fractionLength(0...2)))
                             .textFieldStyle(.roundedBorder)
-                        Stepper("", value: $draft.laps, in: 0...300, step: 1)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: lapsFieldWidth)
+                        Stepper("", value: $draft.laps, in: 0...maximumRunLaps, step: 1)
                             .labelsHidden()
                     }
                 }
@@ -571,7 +727,8 @@ private struct RunEditSheet: View {
                 Button("Save") {
                     onSave(draft)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
+                .buttonBorderShape(.roundedRectangle(radius: 8))
                 .keyboardShortcut(.defaultAction)
                 .disabled(draft.laps <= 0)
             }
@@ -603,15 +760,10 @@ private struct TrackThumbnailView: View {
                 )
                     .padding(20)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.quaternary)
+                    .lapsGlassCard()
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(.white.opacity(0.18), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
         .accessibilityLabel(accessibilityLabel)
     }
 
@@ -754,21 +906,13 @@ private struct TrackGeometryIcon: View {
     }
 
     private func laneLabel(_ label: String, side: CGFloat) -> some View {
-        let diameter = min(max(side * 0.40, 14), 26)
+        let labelSize = min(max(side * 0.40, 14), 26)
         let fontSize = min(max(side * 0.28, 9), 17)
         return Text(label)
             .font(.system(size: fontSize, weight: .bold, design: .rounded))
             .monospacedDigit()
             .foregroundStyle(.primary)
-            .frame(width: diameter, height: diameter)
-            .background {
-                Circle()
-                    .fill(.background.opacity(0.88))
-            }
-            .overlay {
-                Circle()
-                    .stroke(Color.accentColor.opacity(0.32), lineWidth: 0.8)
-            }
+            .frame(width: labelSize, height: labelSize)
     }
 }
 
@@ -969,7 +1113,7 @@ private struct ReferenceTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+        .lapsGlassCard()
     }
 }
 
@@ -990,7 +1134,7 @@ private struct DistanceTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+        .lapsGlassCard()
     }
 
     private var formatted: String {
@@ -1015,7 +1159,7 @@ private struct ValueTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+        .lapsGlassCard()
     }
 }
 
@@ -1050,11 +1194,7 @@ private struct MilestoneChip: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(chipColor.opacity(isComplete ? 0.20 : 0.08), in: RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(chipColor.opacity(isComplete ? 0.90 : 0.22), lineWidth: isComplete ? 1.5 : 1)
-        )
+        .lapsTintedGlassCard(chipColor, isProminent: isComplete)
     }
 
     private var chipColor: Color {

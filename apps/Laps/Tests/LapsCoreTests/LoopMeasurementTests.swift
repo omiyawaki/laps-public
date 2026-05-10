@@ -45,6 +45,14 @@ import Foundation
     }
 }
 
+@Test func trackShortCodesUseCompactTwoCharacterTableIDs() {
+    #expect(TrackCatalog.defaultTrack.shortCode == "EL")
+    #expect(TrackCatalog.track(for: "standard_track_lane_1")?.shortCode == "S1")
+    #expect(TrackCatalog.track(for: "standard_track_lane_6")?.shortCode == "S6")
+    #expect(TrackCatalog.tracks.allSatisfy { $0.shortCode.count == 2 })
+    #expect(Set(TrackCatalog.tracks.map(\.shortCode)).count == TrackCatalog.tracks.count)
+}
+
 @Test func standardTrackLaneIconsUseProportionedLaneGeometry() {
     let lane1 = TrackCatalog.track(for: "standard_track_lane_1")
     let lane6 = TrackCatalog.track(for: "standard_track_lane_6")
