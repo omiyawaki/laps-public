@@ -417,7 +417,7 @@ struct ContentView: View {
                     .lineLimit(1)
                     .help(track.name)
             }
-            .width(min: 26, ideal: 28, max: 30)
+            .width(min: 34, ideal: 36, max: 38)
             TableColumn("Date") { entry in
                 Text(entry.date.formatted(date: .abbreviated, time: .omitted))
             }

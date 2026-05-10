@@ -98,7 +98,7 @@ Assets/AppIcon/Laps.icon
 ```
 
 The layered artwork is generated from the accepted 1 m running-line geometry,
-then compiled with the shared `icon-composer-build` tool:
+then compiled with the shared `apple-app-tools icon build` command:
 
 ```bash
 scripts/build_laps_icon.sh

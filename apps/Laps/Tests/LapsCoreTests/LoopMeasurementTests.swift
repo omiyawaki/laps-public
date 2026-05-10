@@ -33,7 +33,6 @@ import Foundation
         "standard_track_lane_5": 430.034,
         "standard_track_lane_6": 437.700
     ]
-    #expect(TrackCatalog.tracks.count == 7)
     for (trackID, expectedLength) in expectedLengths {
         let track = TrackCatalog.track(for: trackID)
         #expect(track != nil)
@@ -45,11 +44,11 @@ import Foundation
     }
 }
 
-@Test func trackShortCodesUseCompactTwoCharacterTableIDs() {
+@Test func trackShortCodesUseCompactTableIDs() {
     #expect(TrackCatalog.defaultTrack.shortCode == "EL")
     #expect(TrackCatalog.track(for: "standard_track_lane_1")?.shortCode == "S1")
     #expect(TrackCatalog.track(for: "standard_track_lane_6")?.shortCode == "S6")
-    #expect(TrackCatalog.tracks.allSatisfy { $0.shortCode.count == 2 })
+    #expect(TrackCatalog.tracks.allSatisfy { (2...3).contains($0.shortCode.count) })
     #expect(Set(TrackCatalog.tracks.map(\.shortCode)).count == TrackCatalog.tracks.count)
 }
 

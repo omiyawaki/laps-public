@@ -150,19 +150,19 @@ public struct Track: Codable, Hashable, Identifiable, Sendable {
 
         let initials = name
             .split { !$0.isLetter && !$0.isNumber }
-            .prefix(2)
+            .prefix(3)
             .compactMap(\.first)
             .map { String($0).uppercased() }
             .joined()
 
         if initials.count >= 2 {
-            return String(initials.prefix(2))
+            return String(initials.prefix(3))
         }
 
         let compactName = name
             .filter { $0.isLetter || $0.isNumber }
             .uppercased()
-        return String(compactName.prefix(2))
+        return String(compactName.prefix(3))
     }
 }
 

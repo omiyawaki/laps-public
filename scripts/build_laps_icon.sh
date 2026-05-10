@@ -4,7 +4,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_ICON_DIR="$PROJECT_ROOT/apps/Laps/Assets/AppIcon"
 ICON_DOC="$APP_ICON_DIR/Laps.icon"
-TOOL_REPO="${ICON_COMPOSER_BUILD_REPO:-/Users/USERNAME/tools/icon-composer-build}"
+TOOL_REPO="${APPLE_APP_TOOLS_REPO:-/Users/USERNAME/tools/apple-app-tools}"
 VERIFY_PLIST=""
 
 while [[ $# -gt 0 ]]; do
@@ -25,7 +25,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ! -d "$TOOL_REPO" ]]; then
-  echo "icon-composer-build repo not found at: $TOOL_REPO" >&2
+  echo "apple-app-tools repo not found at: $TOOL_REPO" >&2
   exit 1
 fi
 
@@ -37,7 +37,7 @@ fi
 "$PROJECT_ROOT/.venv/bin/python" "$PROJECT_ROOT/scripts/generate_laps_icon.py"
 
 COMMAND=(
-  swift run --package-path "$TOOL_REPO" -c release icon-composer-build build
+  swift run --package-path "$TOOL_REPO" -c release apple-app-tools icon build
   --icon "$ICON_DOC"
   --name Laps
   --out "$APP_ICON_DIR"
