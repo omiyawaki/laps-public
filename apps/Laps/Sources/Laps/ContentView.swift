@@ -145,9 +145,7 @@ struct ContentView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                LocalAppUpdateToolbarButton(controller: updateController)
-            }
+            LocalAppUpdateToolbarItem(controller: updateController)
         }
         .task {
             await updateController.checkForUpdates()
