@@ -4,8 +4,13 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_ICON_DIR="$PROJECT_ROOT/apps/Laps/Assets/AppIcon"
 ICON_DOC="$APP_ICON_DIR/Laps.icon"
+ICNS_OUT="$APP_ICON_DIR/Laps.icns"
+CAR_OUT="$APP_ICON_DIR/Assets.car"
+GENERATOR="$PROJECT_ROOT/scripts/generate_laps_icon.py"
+GEOMETRY="$PROJECT_ROOT/geometry/running-line-1m-visual-candidate.geojson"
 TOOL_REPO="${APPLE_APP_TOOLS_REPO:-/Users/USERNAME/tools/apple-app-tools}"
 VERIFY_PLIST=""
+FORCE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -16,6 +21,10 @@ while [[ $# -gt 0 ]]; do
       fi
       VERIFY_PLIST="$2"
       shift 2
+      ;;
+    --force)
+      FORCE=1
+      shift
       ;;
     *)
       echo "Unknown argument: $1" >&2
@@ -29,12 +38,70 @@ if [[ ! -d "$TOOL_REPO" ]]; then
   exit 1
 fi
 
+verify_plist() {
+  local plist="$1"
+  local icon_name
+  if ! icon_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconName' "$plist" 2>/dev/null)"; then
+    echo "$plist must set CFBundleIconName to Laps." >&2
+    exit 1
+  fi
+  if [[ "$icon_name" != "Laps" ]]; then
+    echo "$plist must set CFBundleIconName to Laps." >&2
+    exit 1
+  fi
+  if /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$plist" >/dev/null 2>&1; then
+    echo "$plist must not set CFBundleIconFile because it can bypass adaptive Icon Composer assets." >&2
+    exit 1
+  fi
+}
+
+# Returns 0 (rebuild) when outputs are missing or older than any tracked file
+# input; returns 1 (cache hit) when both exported assets are newer than every
+# file under Laps.icon, the geometry source, and the generator script.
+needs_rebuild() {
+  [[ -f "$ICNS_OUT" && -f "$CAR_OUT" ]] || return 0
+
+  local baseline="$ICNS_OUT"
+  if [[ "$CAR_OUT" -ot "$ICNS_OUT" ]]; then
+    baseline="$CAR_OUT"
+  fi
+
+  local newer
+  newer="$(
+    {
+      find "$ICON_DOC" -type f -newer "$baseline" -print 2>/dev/null
+      for input in "$GENERATOR" "$GEOMETRY"; do
+        if [[ -f "$input" && "$input" -nt "$baseline" ]]; then
+          printf '%s\n' "$input"
+        fi
+      done
+    } | head -n 1 || true
+  )"
+  [[ -n "$newer" ]]
+}
+
+if [[ $FORCE -eq 0 ]] && ! needs_rebuild; then
+  echo "Laps icon assets are up to date; skipping regeneration."
+  if [[ -n "$VERIFY_PLIST" ]]; then
+    verify_plist "$VERIFY_PLIST"
+  fi
+  exit 0
+fi
+
 if [[ ! -x "$PROJECT_ROOT/.venv/bin/python" ]]; then
-  echo "Missing project Python environment at $PROJECT_ROOT/.venv/bin/python" >&2
+  echo "Laps icon source has changed and needs regeneration, but" >&2
+  echo "  $PROJECT_ROOT/.venv/bin/python" >&2
+  echo "is missing. This commonly happens inside a git worktree, where .venv" >&2
+  echo "lives only at the parent checkout." >&2
+  echo >&2
+  echo "Either run the deploy from the parent checkout, copy or symlink a venv" >&2
+  echo "with numpy/pyproj/shapely into this worktree, or pass --force to skip" >&2
+  echo "regeneration if the existing Laps.icns and Assets.car are known to be" >&2
+  echo "current." >&2
   exit 1
 fi
 
-"$PROJECT_ROOT/.venv/bin/python" "$PROJECT_ROOT/scripts/generate_laps_icon.py"
+"$PROJECT_ROOT/.venv/bin/python" "$GENERATOR"
 
 COMMAND=(
   swift run --package-path "$TOOL_REPO" -c release apple-app-tools icon build

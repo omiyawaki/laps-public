@@ -25,13 +25,7 @@ if [[ ! -f "$RUNS_FILE" ]]; then
   printf '[]\n' > "$RUNS_FILE"
 fi
 
-cd "$APP_SOURCE_DIR"
-swift build -c release
-
 mkdir -p "$BUILD_DIR"
-if [[ -d "$APP_BUNDLE" ]]; then
-  find "$APP_BUNDLE" -maxdepth 1 -name '*.bundle' -exec rm -rf {} +
-fi
 
 cat > "$PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -72,6 +66,13 @@ cat > "$PLIST" <<PLIST
 PLIST
 
 "$PROJECT_ROOT/scripts/build_laps_icon.sh" --verify-plist "$PLIST"
+
+cd "$APP_SOURCE_DIR"
+swift build -c release
+
+if [[ -d "$APP_BUNDLE" ]]; then
+  find "$APP_BUNDLE" -maxdepth 1 -name '*.bundle' -exec rm -rf {} +
+fi
 
 RESOURCE_ARGS=(
   --resource "$APP_ICON_DIR/Laps.icns"
