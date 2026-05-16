@@ -11,12 +11,21 @@ struct RunChartsView: View {
     @State private var selectedDate: Date?
     @State private var visibleDateRange: ClosedRange<Date>?
 
+    private let calendar = Calendar.current
+
     private var points: [RunChartPoint] {
-        entries.compactMap { entry in
-            guard let value = activeMetric.value(for: entry, track: track(for: entry)) else {
+        let valid = entries.filter { entry in
+            activeMetric.value(for: entry, track: track(for: entry)) != nil
+        }
+        let groups = Dictionary(grouping: valid) { entry in
+            calendar.startOfDay(for: entry.date)
+        }
+        return groups.compactMap { dayStart, dayEntries -> RunChartPoint? in
+            guard let value = activeMetric.aggregatedValue(for: dayEntries, trackResolver: track(for:)) else {
                 return nil
             }
-            return RunChartPoint(entry: entry, value: value)
+            let sorted = dayEntries.sorted { $0.date < $1.date }
+            return RunChartPoint(date: dayStart, value: value, entries: sorted)
         }
         .sorted { $0.date < $1.date }
     }
@@ -304,11 +313,10 @@ struct RunChartsView: View {
             guard !points.isEmpty else {
                 return "-"
             }
-            let totalSeconds = points.reduce(0.0) { total, point in
-                total + (point.entry.elapsedSeconds ?? 0)
-            }
-            let totalMiles = points.reduce(0.0) { total, point in
-                total + track(for: point.entry).distanceMiles(forLaps: point.entry.laps)
+            let allEntries = points.flatMap(\.entries)
+            let totalSeconds = allEntries.reduce(0.0) { $0 + ($1.elapsedSeconds ?? 0) }
+            let totalMiles = allEntries.reduce(0.0) { acc, entry in
+                acc + track(for: entry).distanceMiles(forLaps: entry.laps)
             }
             guard totalSeconds > 0, totalMiles > 0 else {
                 return "-"
@@ -318,29 +326,51 @@ struct RunChartsView: View {
     }
 
     private func selectedRunSummary(_ point: RunChartPoint) -> some View {
-        let pointTrack = track(for: point.entry)
+        let totalLaps = point.entries.reduce(0.0) { $0 + $1.laps }
+        let totalMiles = point.entries.reduce(0.0) { acc, entry in
+            acc + track(for: entry).distanceMiles(forLaps: entry.laps)
+        }
+        let totalGain = point.entries.reduce(0.0) { acc, entry in
+            acc + track(for: entry).elevationGainFeet(forLaps: entry.laps)
+        }
+        let totalElapsed = point.entries.reduce(0.0) { acc, entry in
+            acc + (entry.elapsedSeconds ?? 0)
+        }
+        let hasElapsed = point.entries.contains { ($0.elapsedSeconds ?? 0) > 0 }
+        let pace: String = {
+            guard hasElapsed, totalMiles > 0 else { return "-" }
+            return durationString(totalElapsed / totalMiles) + " / mi"
+        }()
+        let lapsLabel: String = {
+            let tracks = Set(point.entries.map(\.trackID))
+            if point.entries.count > 1 && tracks.count > 1 {
+                return "\(point.entries.count) runs"
+            }
+            return "\(LoopMeasurement.lapsString(totalLaps)) laps"
+        }()
+
         return HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(point.date.formatted(date: .abbreviated, time: .shortened))
+                Text(point.date.formatted(date: .abbreviated, time: .omitted))
                     .font(.headline)
-                Text(sourceSummary(for: point.entry, track: pointTrack))
+                Text(sourceSummary(for: point.entries))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text("\(LoopMeasurement.lapsString(point.entry.laps)) laps")
+            Text(lapsLabel)
                 .font(.system(.body, design: .rounded).weight(.semibold))
                 .monospacedDigit()
-            Text("\(pointTrack.distanceMiles(forLaps: point.entry.laps), specifier: "%.2f") mi")
+            Text("\(totalMiles, specifier: "%.2f") mi")
                 .font(.system(.body, design: .rounded).weight(.semibold))
                 .monospacedDigit()
-            Text("\(pointTrack.elevationGainFeet(forLaps: point.entry.laps), specifier: "%.0f") ft gain")
+            Text("\(totalGain, specifier: "%.0f") ft gain")
                 .font(.system(.body, design: .rounded).weight(.semibold))
                 .monospacedDigit()
-            Text(durationString(point.entry.elapsedSeconds))
+            Text(durationString(hasElapsed ? totalElapsed : nil))
                 .font(.system(.body, design: .rounded).weight(.semibold))
                 .monospacedDigit()
-            Text(paceString(laps: point.entry.laps, elapsedSeconds: point.entry.elapsedSeconds, track: pointTrack))
+            Text(pace)
                 .font(.system(.body, design: .rounded).weight(.semibold))
                 .monospacedDigit()
         }
@@ -352,12 +382,20 @@ struct RunChartsView: View {
         TrackCatalog.track(for: entry.trackID) ?? TrackCatalog.defaultTrack
     }
 
-    private func sourceSummary(for entry: RunEntry, track: Track) -> String {
-        let source = entry.source == "apple_health_export" ? "Apple Health import" : "Manual entry"
-        guard selectedTrack == nil else {
-            return source
+    private func sourceSummary(for entries: [RunEntry]) -> String {
+        let sources = entries.map { $0.source == "apple_health_export" ? "Apple Health import" : "Manual entry" }
+        let uniqueSources = Array(NSOrderedSet(array: sources)) as? [String] ?? []
+        let sourceText = uniqueSources.joined(separator: " + ")
+
+        if selectedTrack == nil {
+            let trackNames = entries.map { track(for: $0).name }
+            let uniqueTracks = Array(NSOrderedSet(array: trackNames)) as? [String] ?? []
+            return "\(uniqueTracks.joined(separator: " + ")), \(sourceText)"
         }
-        return "\(track.name), \(source)"
+        if entries.count > 1 {
+            return "\(entries.count) runs, \(sourceText)"
+        }
+        return sourceText
     }
 }
 
@@ -438,6 +476,29 @@ private enum RunChartMetric: String, CaseIterable, Identifiable {
         }
     }
 
+    func aggregatedValue(for entries: [RunEntry], trackResolver: (RunEntry) -> Track) -> Double? {
+        guard !entries.isEmpty else { return nil }
+        switch self {
+        case .laps, .distance, .elapsed, .gain:
+            let total = entries.reduce(0.0) { acc, entry in
+                acc + (value(for: entry, track: trackResolver(entry)) ?? 0)
+            }
+            return total
+        case .pace:
+            var totalSeconds = 0.0
+            var totalMiles = 0.0
+            for entry in entries {
+                guard let elapsed = entry.elapsedSeconds, elapsed > 0 else { continue }
+                let miles = trackResolver(entry).distanceMiles(forLaps: entry.laps)
+                guard miles > 0 else { continue }
+                totalSeconds += elapsed
+                totalMiles += miles
+            }
+            guard totalMiles > 0 else { return nil }
+            return totalSeconds / totalMiles / 60
+        }
+    }
+
     func bestValue(in values: [Double]) -> Double? {
         switch self {
         case .laps, .distance, .elapsed, .gain:
@@ -464,11 +525,11 @@ private enum RunChartMetric: String, CaseIterable, Identifiable {
 }
 
 private struct RunChartPoint: Identifiable {
-    let entry: RunEntry
+    let date: Date
     let value: Double
+    let entries: [RunEntry]
 
-    var id: UUID { entry.id }
-    var date: Date { entry.date }
+    var id: TimeInterval { date.timeIntervalSinceReferenceDate }
 }
 
 private struct RunChartReferenceMark: Identifiable {
