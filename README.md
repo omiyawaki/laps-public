@@ -98,8 +98,8 @@ marathon training, where small per-lap errors compound over more than 100 laps.
   `~/Applications/Laps.app`.
 - `geometry/` contains small candidate GeoJSON files that are suitable for
   review and versioning.
-- `requirements.txt` records the Python packages used by the baseline geometry
-  workflow.
+- `pixi.toml` and `pixi.lock` record the reproducible Python environment used
+  by the baseline geometry workflow.
 
 ## Initial Measurement Strategy
 

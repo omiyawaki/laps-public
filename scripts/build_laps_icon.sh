@@ -88,20 +88,15 @@ if [[ $FORCE -eq 0 ]] && ! needs_rebuild; then
   exit 0
 fi
 
-if [[ ! -x "$PROJECT_ROOT/.venv/bin/python" ]]; then
+if ! command -v pixi >/dev/null 2>&1; then
   echo "Laps icon source has changed and needs regeneration, but" >&2
-  echo "  $PROJECT_ROOT/.venv/bin/python" >&2
-  echo "is missing. This commonly happens inside a git worktree, where .venv" >&2
-  echo "lives only at the parent checkout." >&2
-  echo >&2
-  echo "Either run the deploy from the parent checkout, copy or symlink a venv" >&2
-  echo "with numpy/pyproj/shapely into this worktree, or pass --force to skip" >&2
-  echo "regeneration if the existing Laps.icns and Assets.car are known to be" >&2
-  echo "current." >&2
+  echo "Pixi is not available on PATH." >&2
+  echo "Install Pixi with Homebrew, or pass --force only when the existing" >&2
+  echo "Laps.icns and Assets.car are known to be current." >&2
   exit 1
 fi
 
-"$PROJECT_ROOT/.venv/bin/python" "$GENERATOR"
+pixi run --manifest-path "$PROJECT_ROOT" python "$GENERATOR"
 
 COMMAND=(
   swift run --package-path "$TOOL_REPO" -c release apple-app-tools icon build
