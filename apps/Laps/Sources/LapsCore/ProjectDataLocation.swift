@@ -1,9 +1,15 @@
 import Foundation
 
 public enum ProjectDataLocation {
-    public static let runsFilePath = "/Users/USERNAME/Documents/Projects/0001/data/app/lap-log/runs.json"
-
+    /// Default run-log location. Override with the `LAPS_RUNS_PATH`
+    /// environment variable (see `RunStore`).
     public static var runsFileURL: URL {
-        URL(fileURLWithPath: runsFilePath)
+        let base = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first ?? FileManager.default.homeDirectoryForCurrentUser
+        return base
+            .appendingPathComponent("Laps", isDirectory: true)
+            .appendingPathComponent("runs.json")
     }
 }

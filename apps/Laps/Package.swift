@@ -11,7 +11,7 @@ let package = Package(
         .executable(name: "Laps", targets: ["Laps"])
     ],
     dependencies: [
-        .package(path: "/Users/USERNAME/tools/apple-app-tools")
+        .package(url: "https://github.com/omiyawaki/apple-app-tools-public.git", branch: "main")
     ],
     targets: [
         .target(name: "LapsCore"),
@@ -19,8 +19,8 @@ let package = Package(
             name: "Laps",
             dependencies: [
                 "LapsCore",
-                .product(name: "AppleAppDesignSystem", package: "apple-app-tools"),
-                .product(name: "LocalAppUpdateKit", package: "apple-app-tools")
+                .product(name: "AppleAppDesignSystem", package: "apple-app-tools-public"),
+                .product(name: "LocalAppUpdateKit", package: "apple-app-tools-public")
             ],
             path: "Sources/Laps",
             resources: [

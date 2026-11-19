@@ -5,7 +5,7 @@ final class GitRunLogSync: @unchecked Sendable {
 
     private let gitExecutable: String
     private let environment: [String: String]
-    private let queue = DispatchQueue(label: "local.osamu.laps.git-run-log-sync")
+    private let queue = DispatchQueue(label: "local.laps.git-run-log-sync")
 
     init(
         gitExecutable: String = "/usr/bin/git",
@@ -16,9 +16,9 @@ final class GitRunLogSync: @unchecked Sendable {
     }
 
     func sync(fileURL: URL, reason: String) {
-        let disabled = environment["LAPS_DISABLE_GIT_SYNC"] == "1"
-            || environment["LAPS_DISABLE_GIT_SYNC"] == "true"
-        guard !disabled else {
+        let enabled = environment["LAPS_ENABLE_GIT_SYNC"] == "1"
+            || environment["LAPS_ENABLE_GIT_SYNC"] == "true"
+        guard enabled else {
             return
         }
 

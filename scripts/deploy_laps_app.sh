@@ -10,9 +10,9 @@ APP_BUNDLE="$INSTALL_DIR/$APP_NAME.app"
 OLD_APP_BUNDLE="$INSTALL_DIR/Laps.app"
 BUILD_DIR="$PROJECT_ROOT/build/laps-app"
 PLIST="$BUILD_DIR/Info.plist"
-RUNS_FILE="$PROJECT_ROOT/data/app/lap-log/runs.json"
+RUNS_FILE="${LAPS_RUNS_PATH:-$HOME/Library/Application Support/Laps/runs.json}"
 APP_ICON_DIR="$APP_SOURCE_DIR/Assets/AppIcon"
-TOOLS_REPO="${APPLE_APP_TOOLS_REPO:-/Users/USERNAME/tools/apple-app-tools}"
+TOOLS_REPO="${APPLE_APP_TOOLS_REPO:-$HOME/tools/apple-app-tools}"
 SIGN_IDENTITY="${LAPS_SIGN_IDENTITY:-${LAPS_SIGN_IDENTITY_UNUSED:-}}"
 
 if [[ ! -d "$TOOLS_REPO" ]]; then

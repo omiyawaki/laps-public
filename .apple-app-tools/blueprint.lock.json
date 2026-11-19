@@ -9,7 +9,7 @@
     "configuration" : "release",
     "deployCommand" : "scripts\/deploy_laps_app.sh",
     "executable" : "Laps",
-    "projectRoot" : "\/Users\/USERNAME\/Documents\/Projects\/0001",
+    "projectRoot" : ".",
     "swiftPackagePath" : "apps\/Laps"
   },
   "components" : [
@@ -72,7 +72,7 @@
   "packageDependencies" : [
     {
       "name" : "apple-app-tools",
-      "path" : "\/Users\/USERNAME\/tools\/apple-app-tools",
+      "path" : "..\/apple-app-tools",
       "products" : [
         "AppleAppDesignSystem",
         "LocalAppUpdateKit"

@@ -30,3 +30,11 @@ cache/
 
 # Local notebooks/checkpoints
 .ipynb_checkpoints/
+
+# Generated icon renditions (rebuild with scripts/build_laps_icon.sh)
+apps/Laps/Assets/AppIcon/Laps.png
+apps/Laps/Assets/AppIcon/Laps.icns
+apps/Laps/Assets/AppIcon/Assets.car
+
+# Personal run logs
+data/app/lap-log/runs.json

@@ -8,7 +8,7 @@ ICNS_OUT="$APP_ICON_DIR/Laps.icns"
 CAR_OUT="$APP_ICON_DIR/Assets.car"
 GENERATOR="$PROJECT_ROOT/scripts/generate_laps_icon.py"
 GEOMETRY="$PROJECT_ROOT/geometry/running-line-1m-visual-candidate.geojson"
-TOOL_REPO="${APPLE_APP_TOOLS_REPO:-/Users/USERNAME/tools/apple-app-tools}"
+TOOL_REPO="${APPLE_APP_TOOLS_REPO:-$HOME/tools/apple-app-tools}"
 VERIFY_PLIST=""
 FORCE=0
 
@@ -96,7 +96,7 @@ if ! command -v pixi >/dev/null 2>&1; then
   exit 1
 fi
 
-pixi run --manifest-path "$PROJECT_ROOT" python "$GENERATOR"
+pixi run --manifest-path "$PROJECT_ROOT" python "$GENERATOR" --measurement-crs "${LAPS_MEASUREMENT_CRS:-EPSG:32631}"
 
 COMMAND=(
   swift run --package-path "$TOOL_REPO" -c release apple-app-tools icon build

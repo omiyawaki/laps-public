@@ -1,12 +1,13 @@
 site:
-  name: Example Loop
+  name: Example loop
   description: >
-    Running loop around the green space bounded by Loop N and Loop S
-    between First Cross Street and Second Cross Street in Example City, New York.
+    Placeholder for the running loop to measure. Replace this block with the
+    streets that bound your own loop. The geometry shipped in this repository
+    is synthetic.
   center:
-    latitude: 0.0010000
-    longitude: 0.0010000
-    source_text: placeholder coordinates
+    latitude: 0.001
+    longitude: 0.001
+    source_text: placeholder coordinates (synthetic example, not a real place)
   roads:
     primary:
       - Loop N
@@ -26,8 +27,8 @@ measurement:
     half_marathon: 21097.5
     marathon: 42195
   crs:
-    preferred_measurement: EPSG:32115
-    preferred_measurement_name: NAD83 / New York East, meters
+    preferred_measurement: EPSG:32631
+    preferred_measurement_name: WGS 84 / UTM zone 31N, meters (placeholder; use the projected CRS for your site)
     interchange: EPSG:26918
     interchange_name: NAD83 / UTM zone 18N, meters
     notes: >

@@ -1,160 +1,104 @@
-# Loop Measurement
+# Laps: loop measurement and a lap-logging app
 
-## Goal
+This repository has two parts:
 
-Estimate the reproducible one-lap distance of the running loop around the
-green space bounded by Loop N and Loop S between First Cross Street and
-Second Cross Street in Example City, New York.
+1. A reproducible geospatial pipeline that measures the length of a running
+   loop to within a few centimeters per lap, using only public GIS data
+   (orthoimagery, LiDAR and street centerlines).
+2. **Laps**, a native macOS SwiftUI app that logs laps on measured tracks and
+   turns them into distance, pace and elevation gain.
 
-The current working path is offset from the curb by 1 m, similar to a
-sidewalk separated from a road by a narrow grass strip. The target use case is
-marathon training, where small per-lap errors compound over more than 100 laps.
+> **All geometry, constants and run data in this repository are synthetic.**
+> The example loop is an arbitrary closed curve at a placeholder location
+> (see `geometry/README.md`), and the sample run log in `data/app/lap-log/` is
+> invented. Nothing here describes a real place or a real person's runs.
 
-## Location
+## Why
 
-- Center: `placeholder coordinates`
-- Decimal: `0.0010000, 0.0010000`
-- Roads: Loop N and Loop S
-- Cross-streets: First Cross Street and Second Cross Street
+For marathon training on a short loop, a small per-lap error compounds over
+more than 100 laps. A 2 m error per lap is 200 m by the end of a long run.
+Consumer GPS is not accurate enough to settle that, so the loop is measured from
+public orthoimagery and LiDAR instead, and the Laps app logs runs against the
+result.
 
-## Project Files
+## How the measurement works
 
-- `config/site.yaml` records the AOI, offset, target milestones, CRS choices,
-  and primary public source endpoints.
-- `docs/data-sources.md` records the first pass through public GIS sources and
-  explains which layers are usable, which are only sanity checks, and which
-  still need follow-up.
-- `docs/method.md` describes the proposed reproducible measurement workflow
-  and the main accuracy constraints.
-- `scripts/query_sources.rb` refreshes the source-discovery snapshot from the
-  configured public ArcGIS REST endpoints.
-- `scripts/export_ortho.rb` exports a reproducible 2024 orthoimagery crop for
-  the AOI.
-- `scripts/extract_downloaded_ortho_crop.py` extracts the matching crop from
-  the downloadable the city 2024 orthoimagery zip and renders a
-  comparison against the web-service crop.
-- `scripts/build_baseline_geometry.py` builds the first reviewable curb/edge
-  and 2 ft offset candidate from the tight crop, plus a distance-function
-  diagnostic plot for review.
-- `scripts/run_geometry_experiments.py` runs the fixed changepoint detector
-  through several geometry/noise postprocessors for side-by-side review.
-- `scripts/extract_lidar_dem_crop.py` and
-  `scripts/extract_lidar_las_crop.py` isolate FEMA 2019 elevation/LiDAR data
-  around the loop and render review previews.
-- `scripts/build_fused_segmentation.py` builds a first two-dimensional curb
-  candidate from seeded superpixel graph segmentations using imagery-only,
-  LiDAR-only, and fused feature sets.
-- `scripts/smooth_fused_contour.py` and
-  `scripts/analyze_curb_curvature.py` apply wavelength-based closed-curve
-  filtering and diagnose whether the smoothing respects the tightest physical
-  curb bend.
-- `scripts/fit_piecewise_curvature.py` fits sparse line/arc/flexible-arc
-  geometry to the smoothed curb to remove residual local humps without using
-  a global blur.
-- `scripts/refine_data_aware_boundary.py` refines the piecewise curb against
-  the original ortho and LiDAR evidence rather than treating the previous
-  curve as ground truth.
-- `scripts/build_loop_viewer.py` builds a local browser review UI with
-  hover/click metadata along the current curb path, including separate imagery
-  and LiDAR evidence at each station.
-- `scripts/analyze_centerline_distance.py` plots nearest Loop centerline
-  distance along the current curb path as a diagnostic for residual humps.
-- `scripts/analyze_heading_motion.py` treats the curb as a trajectory and
-  plots heading residual, curvature residual, and local course-correction
-  energy around suspect stations.
-- `scripts/refine_visual_curb_edge.py` searches a narrow corridor around the
-  current curb for a tangent-continuous visual curb edge using imagery-derived
-  road/grass contrast, gray curb-line evidence, and smooth offset penalties.
-- `scripts/build_running_line.py` offsets the accepted production curb by the
-  configured running distance and writes lap-count diagnostics.
-- `scripts/derive_track_elevation.py` samples the accepted running line against
-  the FEMA 2019 1 m bare-earth DEM and derives per-lap elevation gain/loss.
-- `docs/lap-log-macos-app.md` sketches the native macOS lap logging app that
-  will use the measured loop length.
-- `docs/apple-health-backfill.md` records Apple Health export extraction and
-  route-summary findings for historical Loop runs.
-- `docs/second-site-measurement.md` records the Second Site review
-  workflow using wearable GPS, 2024 NYS orthoimagery, and NYS `Latest_DEM`.
-- `apps/Laps/` contains the native macOS lap logging app with default all-track
-  aggregation, a searchable measured-track sidebar, and built-in standard-track
-  lanes 1-6.
-- `scripts/build_laps_icon.sh` generates the Icon Composer app icon from the
-  production running-line GeoJSON and exports compatibility assets.
-- `scripts/generate_track_thumbnail.py` generates bundled track thumbnails
-  from the ortho crop and accepted track geometry.
-- `scripts/summarize_apple_health_export.py` summarizes Apple Health workout
-  routes and flags likely Loop runs for backfill.
-- `scripts/extract_loop_laps_from_apple_health.py` estimates complete
-  Loop laps and lap-only elapsed time from candidate GPX routes.
-- `scripts/import_loop_lap_estimates.py` imports high-confidence Apple
-  Health lap estimates into the official project-local run log.
-- `scripts/query_site_sources.py`,
-  `scripts/export_second_site_layers.py`,
-  `scripts/build_second_site_track.py`, and
-  `scripts/build_second_site_viewer.py` build the Second Site source
-  inventory, imagery/DEM layers, wearable-derived candidate geometry, and local
-  review UI.
-- `scripts/deploy_laps_app.sh` builds and installs the app at
-  `~/Applications/Laps.app`.
-- `geometry/` contains small candidate GeoJSON files that are suitable for
-  review and versioning.
-- `pixi.toml` and `pixi.lock` record the reproducible Python environment used
-  by the baseline geometry workflow.
+The workflow is described in `docs/method.md` and `docs/data-sources.md`.
+In short:
 
-## Initial Measurement Strategy
+1. Pull a small imagery crop and elevation data around the loop from public
+   ArcGIS services (the scripts target New York State services; see
+   `config/site.yaml` for the site definition).
+2. Detect the curb edge. Several detectors and smoothers are compared in
+   `scripts/run_geometry_experiments.py` (Hampel, total variation, spline,
+   ridge, elastic net, Viterbi, hybrids).
+3. Fuse imagery and LiDAR evidence, smooth the closed curve by wavelength,
+   then fit sparse line and arc segments so no curve is tighter than the real
+   curb.
+4. Offset the curb inward by 1 m to get the running line, and compute its
+   length and per-lap elevation gain.
+5. Review the result in a local browser viewer
+   (`scripts/build_loop_viewer.py`).
 
-1. Define a small area of interest around the green space.
-2. Look first for authoritative vector data, especially curb lines, edge of
-   pavement, sidewalk, planimetric, or road-surface polygons from Example City,
-   the county, New York State, or other public sources.
-3. If authoritative vector data is not available, acquire public orthorectified
-   imagery and derive the road/curb edge with a scriptable, human-reviewed
-   workflow.
-4. Generate the running path as an offset from the selected curb/edge geometry.
-   The current configured offset is `1 m = 3.280839895 ft`.
-5. Measure the offset path in an appropriate projected coordinate reference
-   system, then report distance per lap and lap counts for common milestones.
-6. Record assumptions, source dates, coordinate systems, smoothing tolerances,
-   and uncertainty estimates so the calculation can be rerun.
+Candidate geometries are GeoJSON files under `geometry/`. The ones committed
+here are the synthetic example loop. The imagery-based steps need real raw
+downloads (not committed) for your own site; the downstream steps (running
+line, icon generation, elevation profile, Apple Health lap extraction) work
+from the GeoJSON.
 
-## Candidate Inputs
+## Laps app
 
-- NYS 2024 orthoimagery as the first public imagery base.
-- NYS Streets centerlines for naming, bounding, and sanity checks.
-- NYS LiDAR/elevation products if they help distinguish curb/road edges.
-- Local/county/city GIS layers for curbs, edge of pavement, sidewalks, roads,
-  or planimetric features if a scriptable public source is found.
-- USGS/The National Map and USDA NAIP imagery as national fallback sources.
+`apps/Laps` is a SwiftUI app (macOS 26, Swift 6.2) split into:
 
-## Outputs
+- `LapsCore`: measurement constants, loop/lap math, date formatting. No UI and
+  no external dependencies.
+- `Laps`: the app. Searchable track sidebar, entry form, run log, and Swift
+  Charts graphs for laps, distance, pace and elevation gain.
 
-- Curated curb or road-edge geometry.
-- Configurable offset path geometry.
-- One-lap distance in meters, kilometers, miles, and feet.
-- Lap-count table for 5K, 10K, half marathon, marathon, and custom targets.
-- Notes on uncertainty and data provenance.
-- Review overlays and diagnostics showing accepted/omitted curb evidence.
+Built-in tracks are the synthetic Example Loop (320 m per lap) and lanes 1-6 of
+a standard 400 m track.
 
-## Current Measurement
+The run log is stored outside the repository by default
+(`~/Library/Application Support/Laps/runs.json`; override with `LAPS_RUNS_PATH`).
+Try the app with the synthetic sample log:
 
-- Production curb: `geometry/curb-edge-visual-candidate.geojson`
-- Production running line: `geometry/running-line-1m-visual-candidate.geojson`
-- Offset: `1.0 m`
-- One lap: `320.000 m`, `0.198839 mi`, `1049.869 ft`
-- One-lap elevation gain/loss: `1.500 m`, `4.921 ft`, derived from the FEMA
-  2019 1 m bare-earth DEM with 10 m closed-profile smoothing.
-- Elevation diagnostics:
-  `geometry/running-line-1m-elevation-profile.json`
-- Milestone diagnostics:
-  `build/fusion/running-line-1m-visual-diagnostics.json`
-- Lap log data:
-  `data/app/lap-log/runs.json`
+```bash
+cd apps/Laps
+LAPS_RUNS_PATH="$PWD/../../data/app/lap-log/sample-runs.json" swift run Laps
+```
 
-## Open Questions
+## Build and test
 
-- Does Example City or the county publish curb, sidewalk, or edge-of-pavement data
-  outside the public maps checked so far?
-- Is the intended running line always 1 m from the curb, or does it vary around
-  corners and entrances?
-- Should the loop follow rounded corner geometry, a runner's natural tangent,
-  or a strict geometric offset from the curb?
+Python pipeline (macOS arm64, uses [Pixi](https://pixi.sh)):
+
+```bash
+pixi install
+pixi run check        # verifies the scientific dependencies import
+python scripts/build_baseline_geometry.py --help
+```
+
+Laps app:
+
+```bash
+cd apps/Laps
+swift test            # LapsCore unit tests
+swift run Laps
+```
+
+`apps/Laps/Package.swift` pulls shared design-system and updater code from
+[apple-app-tools-public](https://github.com/omiyawaki/apple-app-tools-public)
+as a remote SwiftPM dependency. The icon and deploy scripts also run that
+repository's `apple-app-tools` command-line tool; set `APPLE_APP_TOOLS_REPO` to
+a local clone of it.
+
+## Data sources and terms
+
+The pipeline reads imagery, DEM and street centerlines from New York State and
+local public GIS services (see `docs/data-sources.md`). Those datasets are
+published under their providers' terms (for New York State, see
+<https://gis.ny.gov>); check them before redistributing any raw downloads or
+derived products. No such data is committed here.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

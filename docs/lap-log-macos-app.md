@@ -4,8 +4,7 @@
 
 Laps is a small native macOS app for recording how many laps were run on a given
 day and immediately translating that count into distance using the selected
-track's measured loop length. The first built-in track uses the accepted Example City
-Loop loop measurement.
+track's measured loop length. The first built-in track is a synthetic example loop (see `geometry/README.md`).
 
 Current measurement constants:
 

@@ -1,0 +1,126 @@
+{
+  "fill": "system-dark",
+  "groups": [
+    {
+      "name": "Laps Icon",
+      "shadow": {
+        "kind": "layer-color",
+        "opacity": 0.34
+      },
+      "specular": false,
+      "translucency": {
+        "enabled": false,
+        "value": 0
+      },
+      "blur-material": null,
+      "layers": [
+        {
+          "name": "Route Glint",
+          "glass": false,
+          "hidden": false,
+          "image-name-specializations": [
+            {
+              "value": "05-route-glint.svg"
+            },
+            {
+              "appearance": "dark",
+              "value": "05-route-glint-dark.svg"
+            },
+            {
+              "appearance": "tinted",
+              "value": "05-route-glint-tinted.svg"
+            }
+          ],
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "name": "Route Lane",
+          "glass": false,
+          "hidden": false,
+          "image-name-specializations": [
+            {
+              "value": "04-route-lane.svg"
+            },
+            {
+              "appearance": "dark",
+              "value": "04-route-lane-dark.svg"
+            },
+            {
+              "appearance": "tinted",
+              "value": "04-route-lane-tinted.svg"
+            }
+          ],
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "name": "Inner Field",
+          "glass": false,
+          "hidden": false,
+          "image-name-specializations": [
+            {
+              "value": "03-inner-field.svg"
+            },
+            {
+              "appearance": "dark",
+              "value": "03-inner-field-dark.svg"
+            },
+            {
+              "appearance": "tinted",
+              "value": "03-inner-field-tinted.svg"
+            }
+          ],
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "name": "Measured Loop",
+          "glass": false,
+          "hidden": false,
+          "image-name-specializations": [
+            {
+              "value": "02-route-base.svg"
+            },
+            {
+              "appearance": "dark",
+              "value": "02-route-base-dark.svg"
+            },
+            {
+              "appearance": "tinted",
+              "value": "02-route-base-tinted.svg"
+            }
+          ],
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "supported-platforms": {
+    "circles": [
+      "watchOS"
+    ],
+    "squares": "shared"
+  }
+}

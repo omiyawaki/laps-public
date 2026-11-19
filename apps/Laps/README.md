@@ -2,7 +2,7 @@
 
 Native macOS SwiftUI app for logging laps across measured tracks and translating
 them into distance and elevation gain. Built-in tracks include the accepted
-Example Loop 1 m offset measurement plus lanes 1-6 of a World Athletics
+synthetic Example Loop (320 m per lap) plus lanes 1-6 of a World Athletics
 standard 400 m track.
 
 ## Run Locally
@@ -11,21 +11,22 @@ standard 400 m track.
 swift run Laps
 ```
 
-Run records are saved as project-local JSON at:
+Run records are saved as JSON at
+`~/Library/Application Support/Laps/runs.json` by default. Set `LAPS_RUNS_PATH`
+to use another file, for example the synthetic sample log in this repository:
 
-```text
-/Users/USERNAME/Documents/Projects/0001/data/app/lap-log/runs.json
+```bash
+LAPS_RUNS_PATH="$PWD/../../data/app/lap-log/sample-runs.json" swift run Laps
 ```
 
-That keeps the log next to the measurement project so it can be tracked,
-diffed, and backed up with the project itself. The measurement constants live in
-`Sources/LapsCore/LoopMeasurement.swift` and should be regenerated
-whenever the production running line changes.
+The measurement constants live in `Sources/LapsCore/LoopMeasurement.swift` and
+should be regenerated whenever the production running line changes. The
+built-in Example Loop uses synthetic constants.
 
-After a run is added, edited, or deleted, the app stages and commits only this
-run-log JSON file. It also pushes automatically when the project git repo has an
-upstream or `origin` remote configured. Set `LAPS_DISABLE_GIT_SYNC=1` when
-running special local checks that should not create data commits.
+Optionally, set `LAPS_ENABLE_GIT_SYNC=1` to have the app stage and commit only
+the run-log JSON file whenever a run is added, edited or deleted (it also pushes
+when the enclosing git repository has an upstream or `origin` remote). Sync is
+off by default.
 
 Entries store the selected `trackID`, optional elapsed time in seconds,
 lap-start/lap-end timestamps, and a source label. Distance and elevation gain
@@ -110,6 +111,9 @@ The script writes compatibility outputs under `Assets/AppIcon/`:
 - `Laps.icns`
 - `Assets.car`
 
+(generated, not committed; the committed `Laps.icon` was generated from the
+synthetic example loop)
+
 It also writes default, dark, clear, and tinted rendition previews plus the
 small-size review sheet under `build/laps-app-icon/`. The deploy script calls
 this icon build and copies both `Laps.icns` and `Assets.car` into
@@ -118,8 +122,8 @@ use the adaptive Icon Composer assets.
 
 ## Track Thumbnails
 
-The Example Loop thumbnail is generated from the project ortho crop and the
-accepted 1 m running-line GeoJSON:
+Track thumbnails are generated from a project ortho crop and an accepted 1 m
+running-line GeoJSON:
 
 ```bash
 scripts/generate_track_thumbnail.py
@@ -127,4 +131,5 @@ scripts/generate_track_thumbnail.py
 
 The output lives under `Sources/Laps/Resources/TrackThumbnails/` so SwiftPM
 bundles it with the app. The deploy script copies the generated SwiftPM
-resource bundle into the installed `.app`.
+resource bundle into the installed `.app`. No thumbnails are bundled in this
+repository.

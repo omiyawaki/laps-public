@@ -18,7 +18,7 @@ Generated from `AppleAppBlueprint.yaml`. Edit the blueprint first, then regenera
 
 ## Package Dependencies
 
-- `apple-app-tools` at `/Users/USERNAME/tools/apple-app-tools`: `AppleAppDesignSystem`, `LocalAppUpdateKit`
+- `apple-app-tools` at `../apple-app-tools`: `AppleAppDesignSystem`, `LocalAppUpdateKit`
 
 ## Local App Modules
 
